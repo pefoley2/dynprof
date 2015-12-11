@@ -1,2 +1,2 @@
-dynprof: dynprof.c
-	gcc -Wall -Wextra -o $@ $<
+dynprof: dynprof.cc
+	g++ -Wall -Wextra -ldyninstAPI -o $@ $<
