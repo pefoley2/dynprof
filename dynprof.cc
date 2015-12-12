@@ -36,9 +36,11 @@ const char** get_params(int argc, char* argv[]) {
     return (const char**)params;
 }
 
+void usage() { printf("Usage: ./dyninst [program] arg1,arg2,arg3...\n"); }
+
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        printf("Please specify at least one argument\n");
+        usage();
         return 1;
     }
     unique_ptr<string> path = get_path(argv[1]);
