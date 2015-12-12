@@ -1,8 +1,13 @@
 #include <stdio.h>
 #include <unistd.h>
 
+void foo(int x) {
+    sleep(x);
+}
+
 int main() {
     printf("Before\n");
-    sleep(1);
+    foo(1);
     printf("After\n");
+    return 0;
 }

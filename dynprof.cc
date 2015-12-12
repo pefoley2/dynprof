@@ -1,6 +1,7 @@
 #include <BPatch.h>
+#include <BPatch_function.h>
 
-// FIXME: check for more errors
+#include <unordered_map>
 
 unique_ptr<string> get_path(char* exe) {
     char* path = getenv("PATH");
@@ -44,6 +45,23 @@ const char** get_params(int argc, char* argv[]) {
     return (const char**)params;
 }
 
+typedef unordered_map<dynthread_t, BPatch_function*> func_map;
+
+unique_ptr<func_map> get_entry_points(BPatch_process* proc) {
+    unique_ptr<vector<BPatch_thread*>> threads(new vector<BPatch_thread*>);
+    unique_ptr<func_map> functions(new func_map);
+    proc->getThreads(*threads);
+    for(BPatch_thread* th: *threads) {
+        functions->emplace(th->getTid(),th->getInitialFunc());
+    }
+    return functions;
+}
+void hook_functions(BPatch_process* proc) {
+    unique_ptr<func_map> functions = get_entry_points(proc);
+    for(auto func: *functions) {
+        cout << func.first << ":" << func.second->getName() << endl;
+    }
+}
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -64,7 +82,7 @@ int main(int argc, char* argv[]) {
     } else {
         printf("Successfully started.\n");
     }
-    // TODO: Attach hooks
+    hook_functions(app.get());
     app->continueExecution();
     while (!app->isTerminated()) {
         bpatch.waitForStatusChange();
