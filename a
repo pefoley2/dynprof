@@ -1,0 +1,1 @@
+LSAN_OPTIONS=suppressions=asan.supp ./dynprof $@

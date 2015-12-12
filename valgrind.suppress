@@ -1,0 +1,64 @@
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:_Znwm
+   fun:_ZN11BPatch_typeC1EPN7Dyninst9SymtabAPI4TypeE
+   fun:_ZN6BPatchC1Ev
+   fun:__cxx_global_var_init.12
+   fun:_GLOBAL__sub_I_dynprof.cc
+   fun:__libc_csu_init
+   fun:(below main)
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:_Znwm
+   fun:_ZN11BPatch_typeC1EPKci16BPatch_dataClass
+   fun:_ZN11BPatch_type10createFakeEPKc
+   fun:_ZN6BPatchC1Ev
+   fun:__cxx_global_var_init.12
+   fun:_GLOBAL__sub_I_dynprof.cc
+   fun:__libc_csu_init
+   fun:(below main)
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:_Znwm
+   fun:_ZN11BPatch_typeC1EPKci16BPatch_dataClass
+   fun:_ZN11BPatch_type10createFakeEPKc
+   fun:_ZN6BPatchC1Ev
+   fun:__cxx_global_var_init.12
+   fun:_GLOBAL__sub_I_dynprof.cc
+   fun:__libc_csu_init
+   fun:(below main)
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:_Znwm
+   fun:_ZN7Dyninst9SymtabAPI14typeCollection11getAllTypesEv
+   fun:_ZN7Dyninst9SymtabAPI6Symtab14getAllstdTypesEv
+   fun:_ZN6BPatchC1Ev
+   fun:__cxx_global_var_init.12
+   fun:_GLOBAL__sub_I_dynprof.cc
+   fun:__libc_csu_init
+   fun:(below main)
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:_Znwm
+   fun:_ZN7Dyninst9SymtabAPI21builtInTypeCollection18getAllBuiltInTypesEv
+   fun:_ZN7Dyninst9SymtabAPI6Symtab18getAllbuiltInTypesEv
+   fun:_ZN6BPatchC1Ev
+   fun:__cxx_global_var_init.12
+   fun:_GLOBAL__sub_I_dynprof.cc
+   fun:__libc_csu_init
+   fun:(below main)
+}

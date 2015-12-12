@@ -1,0 +1,1 @@
+valgrind --suppressions=valgrind.suppress $@
