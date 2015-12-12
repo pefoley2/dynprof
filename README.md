@@ -5,5 +5,5 @@ Dyninst-based gprof equivalent
 Run `make`
 
 ## Running
-`export DYNINSTAPI_RT_LIB=/usr/local/lib/libdyninstAPI_RT.so.9.0`
+`export DYNINSTAPI_RT_LIB=/usr/local/lib/libdyninstAPI_RT.so`
 `./dyninst $pid`

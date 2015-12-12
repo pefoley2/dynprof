@@ -20,6 +20,23 @@ std::unique_ptr<string> get_path(char* exe) {
 
 BPatch bpatch;
 
+const char** get_params(int argc, char *argv[]) {
+  int nargs = argc > 2 ? argc - 1 : 2;
+  char** params = (char**)malloc(nargs*sizeof(char*));
+  if(argc>2) {
+    for(int i=1;i <nargs;i++) {
+      int arglen = strlen(argv[i+1]);
+      params[i]=(char*)malloc(arglen+1);
+      memset(params[i],0,arglen+1);
+      strncpy(params[i],argv[i+1],arglen+1);
+    }
+    params[nargs] = NULL;
+  } else {
+    params[nargs-1] = NULL;
+  }
+  return (const char**)params;
+}
+
 int main(int argc, char *argv[]) {
   if(argc < 2) {
     printf("Please specify at least one argument\n");
@@ -30,18 +47,16 @@ int main(int argc, char *argv[]) {
     printf("%s not found in path\n", argv[1]);
     return 1;
   }
-  const char* params = "";
-  if(argc>2) {
-    params = (const char*)argv[2];
-  }
-  std::unique_ptr<BPatch_process> app(bpatch.processCreate(path->c_str(), &params));
+  const char** params = get_params(argc, argv);
+  params[0] = path->c_str();
+  unique_ptr<BPatch_process> app(bpatch.processCreate(path->c_str(), params));
   if(!app) {
     printf("Failed to start %s\n", path->c_str());
     return 1;
   } else {
     printf("Successfully started.\n");
   }
-  //Attach hooks
+  // TODO: Attach hooks
   app->continueExecution();
   while (!app->isTerminated()) {
     bpatch.waitForStatusChange();
