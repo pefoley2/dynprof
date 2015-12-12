@@ -1,18 +1,26 @@
 #include <BPatch.h>
 
-std::unique_ptr<string> get_path(char* exe) {
+// FIXME: check for more errors
+
+unique_ptr<string> get_path(char* exe) {
     char* path = getenv("PATH");
     char* dir = strtok(path, ":");
     unique_ptr<string> fullpath(new string);
     while (dir) {
-        fullpath->append(dir);
+        fullpath->assign(dir);
         fullpath->append("/");
         fullpath->append(exe);
         if (access(fullpath->c_str(), F_OK) == 0) {
             return fullpath;
         }
-        fullpath->clear();
         dir = strtok(nullptr, ":");
+    }
+    char* resolved_path = realpath(exe, nullptr);
+    if(resolved_path) {
+        fullpath->assign(resolved_path);
+        if(access(fullpath->c_str(), F_OK) == 0) {
+            return fullpath;
+        }
     }
     return nullptr;
 }
@@ -36,11 +44,10 @@ const char** get_params(int argc, char* argv[]) {
     return (const char**)params;
 }
 
-void usage() { printf("Usage: ./dyninst [program] arg1,arg2,arg3...\n"); }
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        usage();
+        printf("Usage: ./dyninst [program] arg1,arg2,arg3...\n");
         return 1;
     }
     unique_ptr<string> path = get_path(argv[1]);
