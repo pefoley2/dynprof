@@ -48,7 +48,6 @@ unique_ptr<string> get_path(char* exe) {
     return nullptr;
 }
 
-
 const char** get_params(int argc, char* argv[]) {
     // FIXME: make more idiomatically c++
     int nargs = argc > 2 ? argc - 1 : 2;
@@ -70,24 +69,27 @@ const char** get_params(int argc, char* argv[]) {
 
 unique_ptr<vector<BPatch_function*>> get_entry_points(BPatch_process* proc) {
     unique_ptr<vector<BPatch_function*>> funcs(new vector<BPatch_function*>);
+    // Should only return one function most of the time
     proc->getImage()->findFunction(DEFAULT_ENTRY_POINT, *funcs);
     return funcs;
 }
 
 void enum_subroutines(BPatch_function func) {
     unique_ptr<vector<BPatch_point*>> subroutines(func.findPoint(BPatch_subroutine));
-    if (subroutines) {
-        for (auto subroutine : *subroutines) {
-            BPatch_function* subfunc = subroutine->getCalledFunction();
-            if (subfunc) {
+    if (!subroutines) {
+        return;
+    }
+    for (auto subroutine : *subroutines) {
+        BPatch_function* subfunc = subroutine->getCalledFunction();
+        if (subfunc) {
+            // Ignore internal functions.
+            if (subfunc->getName().compare(0, 2, "__") == 0) {
+                cout << "skip:" << subfunc->getName() << endl;
+            } else {
                 cout << "sub:" << subfunc->getName() << endl;
                 enum_subroutines(*subfunc);
-            } else {
-                cout << "no called func found for:" << func.getName() << endl;
             }
         }
-    } else {
-        cout << "no subroutines found for func:" << func.getName() << endl;
     }
 }
 

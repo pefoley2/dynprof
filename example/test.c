@@ -2,13 +2,11 @@
 #include <unistd.h>
 
 void foo(unsigned int);
-void foo(unsigned int x) {
-    sleep(x);
-}
+void foo(unsigned int x) { sleep(x); }
 
 int main() {
-    //printf("Before\n");
+    // printf("Before\n");
     foo(1);
-    //printf("After\n");
+    // printf("After\n");
     return 0;
 }
