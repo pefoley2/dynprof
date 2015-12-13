@@ -19,6 +19,7 @@
 
 // PCH
 #include "dyninst.h"
+#include "dynprof.h"
 
 #include <unordered_map>
 
@@ -47,23 +48,24 @@ unique_ptr<string> get_path(char* exe) {
     return nullptr;
 }
 
-BPatch bpatch;
 
 const char** get_params(int argc, char* argv[]) {
+    // FIXME: make more idiomatically c++
     int nargs = argc > 2 ? argc - 1 : 2;
-    char** params = (char**)malloc(nargs * sizeof(char*));
+    unsigned int paramlen = static_cast<unsigned int>(nargs) * sizeof(char*);
+    char** params = static_cast<char**>(malloc(paramlen));
     if (argc > 2) {
         for (int i = 1; i < nargs; i++) {
-            int arglen = strlen(argv[i + 1]);
-            params[i] = (char*)malloc(arglen + 1);
+            size_t arglen = strlen(argv[i + 1]);
+            params[i] = static_cast<char*>(malloc(arglen + 1));
             memset(params[i], 0, arglen + 1);
             strncpy(params[i], argv[i + 1], arglen + 1);
         }
-        params[nargs] = NULL;
+        params[nargs] = nullptr;
     } else {
-        params[nargs - 1] = NULL;
+        params[nargs - 1] = nullptr;
     }
-    return (const char**)params;
+    return const_cast<const char**>(params);
 }
 
 unique_ptr<vector<BPatch_function*>> get_entry_points(BPatch_process* proc) {
@@ -76,10 +78,11 @@ void enum_subroutines(BPatch_function func) {
     unique_ptr<vector<BPatch_point*>> subroutines(func.findPoint(BPatch_subroutine));
     if (subroutines) {
         for (auto subroutine : *subroutines) {
-            unique_ptr<BPatch_function> subfunc(subroutine->getCalledFunction());
+            BPatch_function* subfunc = subroutine->getCalledFunction();
             if (subfunc) {
                 cout << "sub:" << subfunc->getName() << endl;
-                enum_subroutines(*subfunc);
+                // FIXME: stack overflow
+                // enum_subroutines(*subfunc);
             } else {
                 cout << "no called func found for:" << func.getName() << endl;
             }
@@ -119,6 +122,7 @@ int main(int argc, char* argv[]) {
     }
     const char** params = get_params(argc, argv);
     params[0] = path->c_str();
+    BPatch bpatch;
     bpatch.registerCodeDiscoveryCallback(code_discover);
     unique_ptr<BPatch_process> app(bpatch.processCreate(path->c_str(), params));
     if (!app) {

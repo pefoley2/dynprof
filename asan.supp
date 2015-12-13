@@ -1,9 +1,2 @@
-leak:Dyninst::SymtabAPI::Symtab::setupBuiltinTypes
-leak:Dyninst::SymtabAPI::Symtab::setupStdTypes
-leak:Dyninst::SymtabAPI::Type
-leak:Dyninst::SymtabAPI::typeCollection::getAllTypes
-leak:Dyninst::SymtabAPI::builtInTypeCollection::getAllBuiltInTypes
-leak:Dyninst::AnnotatableDense::addAnnotation
-leak:BPatch_type::BPatch_type
-leak:BPatch::BPatch
-leak:std::string::_Rep::_S_create
+leak:home/peter/dyninst
+leak:vector.tcc
