@@ -66,9 +66,9 @@ const char** get_params(int argc, char* argv[]) {
     return (const char**)params;
 }
 
-unique_ptr<vector<BPatch_function*>> get_entry_points(BPatch_process proc) {
+unique_ptr<vector<BPatch_function*>> get_entry_points(BPatch_process* proc) {
     unique_ptr<vector<BPatch_function*>> funcs(new vector<BPatch_function*>);
-    proc.getImage()->findFunction(DEFAULT_ENTRY_POINT, *funcs);
+    proc->getImage()->findFunction(DEFAULT_ENTRY_POINT, *funcs);
     return funcs;
 }
 
@@ -89,7 +89,7 @@ void enum_subroutines(BPatch_function func) {
     }
 }
 
-void hook_functions(BPatch_process proc) {
+void hook_functions(BPatch_process* proc) {
     unique_ptr<vector<BPatch_function*>> functions = get_entry_points(proc);
     for (auto func : *functions) {
         cout << "func:" << func->getName() << endl;
@@ -127,7 +127,7 @@ int main(int argc, char* argv[]) {
     } else {
         printf("Successfully started.\n");
     }
-    hook_functions(*app);
+    hook_functions(app.get());
     app->continueExecution();
     while (!app->isTerminated()) {
         bpatch.waitForStatusChange();
