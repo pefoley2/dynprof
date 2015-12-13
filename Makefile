@@ -1,5 +1,5 @@
 CFLAGS = -Wall -Wextra
-CXXFLAGS = -std=c++11 -Wall -Wextra -L/usr/local/lib -ldyninstAPI
+CXXFLAGS = -std=c++11 -Wall -Wextra -L/usr/local/lib -lcommon -ldyninstAPI
 CFLAGS += -ggdb3
 #CFLAGS += -O2
 #CFLAGS += -fsanitize=address

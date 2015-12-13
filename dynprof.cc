@@ -23,6 +23,8 @@
 
 #include <unordered_map>
 
+#define DEFAULT_ENTRY_POINT "main"
+
 unique_ptr<string> get_path(char* exe) {
     char* path = getenv("PATH");
     char* dir = strtok(path, ":");
@@ -65,43 +67,43 @@ const char** get_params(int argc, char* argv[]) {
     return (const char**)params;
 }
 
-typedef unordered_map<dynthread_t, BPatch_function*> func_map;
-
-unique_ptr<func_map> get_entry_points(BPatch_process* proc) {
-    unique_ptr<func_map> functions(new func_map);
-    unique_ptr<vector<BPatch_thread*>> threads(new vector<BPatch_thread*>);
-    proc->getThreads(*threads);
-    for (auto th : *threads) {
-        functions->emplace(th->getTid(), th->getInitialFunc());
-    }
-    return functions;
+unique_ptr<vector<BPatch_function*>> get_entry_points(BPatch_process proc) {
+    unique_ptr<vector<BPatch_function*>> funcs(new vector<BPatch_function*>);
+    proc.getImage()->findFunction(DEFAULT_ENTRY_POINT, *funcs);
+    return funcs;
 }
 
-void enum_subroutines(BPatch_function* func) {
-    unique_ptr<vector<BPatch_point*>> subroutines(func->findPoint(BPatch_subroutine));
+void enum_subroutines(BPatch_function func) {
+    unique_ptr<vector<BPatch_point*>> subroutines(func.findPoint(BPatch_subroutine));
     if (subroutines) {
         for (auto subroutine : *subroutines) {
-            cout << "sub:" << subroutine->getCalledFunction()->getName() << endl;
-            enum_subroutines(subroutine->getCalledFunction());
+            unique_ptr<BPatch_function> subfunc(subroutine->getCalledFunction());
+            if (subfunc) {
+                cout << "sub:" << subfunc->getName() << endl;
+                enum_subroutines(*subfunc);
+            } else {
+                cout << "no called func found for:" << func.getName() << endl;
+            }
         }
     } else {
-        cout << "no subroutines found for func:" << func->getName() << endl;
+        cout << "no subroutines found for func:" << func.getName() << endl;
     }
 }
 
-void hook_functions(BPatch_process* proc) {
-    unique_ptr<func_map> functions = get_entry_points(proc);
-    for (auto thread : *functions) {
-      cout << thread.first << ":" << thread.second->getName() << endl;
-      enum_subroutines(thread.second);
+void hook_functions(BPatch_process proc) {
+    unique_ptr<vector<BPatch_function*>> functions = get_entry_points(proc);
+    for (auto func : *functions) {
+        cout << "func:" << func->getName() << endl;
+        enum_subroutines(*func);
     }
 }
 
-void code_discover(BPatch_Vector<BPatch_function*> &newFuncs, BPatch_Vector<BPatch_function*> &modFuncs) {
-    for(auto func: newFuncs) {
+void code_discover(BPatch_Vector<BPatch_function*>& newFuncs,
+                   BPatch_Vector<BPatch_function*>& modFuncs) {
+    for (auto func : newFuncs) {
         cout << "new:" << func->getName() << endl;
     }
-    for(auto func: modFuncs) {
+    for (auto func : modFuncs) {
         cout << "mod:" << func->getName() << endl;
     }
 }
@@ -126,7 +128,7 @@ int main(int argc, char* argv[]) {
     } else {
         printf("Successfully started.\n");
     }
-    hook_functions(app.get());
+    hook_functions(*app);
     app->continueExecution();
     while (!app->isTerminated()) {
         bpatch.waitForStatusChange();
