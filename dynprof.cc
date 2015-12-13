@@ -58,7 +58,7 @@ const char** get_params(vector<string> args) {
         memset(params[i], 0, arglen);
         strcpy(params[i], args[i].c_str());
     }
-    params[args.size()] = nullptr;
+    params[args.size()-1] = nullptr;
     return const_cast<const char**>(params);
 }
 
