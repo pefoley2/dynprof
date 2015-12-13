@@ -81,8 +81,7 @@ void enum_subroutines(BPatch_function func) {
             BPatch_function* subfunc = subroutine->getCalledFunction();
             if (subfunc) {
                 cout << "sub:" << subfunc->getName() << endl;
-                // FIXME: stack overflow
-                // enum_subroutines(*subfunc);
+                enum_subroutines(*subfunc);
             } else {
                 cout << "no called func found for:" << func.getName() << endl;
             }

@@ -5,8 +5,8 @@ CXX = clang++
 
 CFLAGS = -Wall -Wextra -Winvalid-pch -Weverything -Wno-c++98-compat
 CFLAGS += -ggdb3
-CFLAGS += -O1 -fno-omit-frame-pointer
-CFLAGS += -fsanitize=address
+#CFLAGS += -O1 -fno-omit-frame-pointer
+#CFLAGS += -fsanitize=address
 
 CXXFLAGS = $(CFLAGS) -std=c++11
 LDFLAGS = -L/usr/local/lib -lcommon -ldyninstAPI

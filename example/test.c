@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <unistd.h>
 
-void foo(int x) {
+void foo(unsigned int);
+void foo(unsigned int x) {
     sleep(x);
 }
 
