@@ -68,28 +68,41 @@ const char** get_params(int argc, char* argv[]) {
 typedef unordered_map<dynthread_t, BPatch_function*> func_map;
 
 unique_ptr<func_map> get_entry_points(BPatch_process* proc) {
-    unique_ptr<vector<BPatch_thread*>> threads(new vector<BPatch_thread*>);
     unique_ptr<func_map> functions(new func_map);
+    unique_ptr<vector<BPatch_thread*>> threads(new vector<BPatch_thread*>);
     proc->getThreads(*threads);
-    for (BPatch_thread* th : *threads) {
-        // getCallStack?
+    for (auto th : *threads) {
         functions->emplace(th->getTid(), th->getInitialFunc());
     }
     return functions;
 }
 
+void enum_subroutines(BPatch_function* func) {
+    unique_ptr<vector<BPatch_point*>> subroutines(func->findPoint(BPatch_subroutine));
+    if (subroutines) {
+        for (auto subroutine : *subroutines) {
+            cout << "sub:" << subroutine->getCalledFunction()->getName() << endl;
+            enum_subroutines(subroutine->getCalledFunction());
+        }
+    } else {
+        cout << "no subroutines found for func:" << func->getName() << endl;
+    }
+}
+
 void hook_functions(BPatch_process* proc) {
     unique_ptr<func_map> functions = get_entry_points(proc);
-    for (auto func : *functions) {
-        cout << func.first << ":" << func.second->getName() << endl;
-        unique_ptr<vector<BPatch_point*>> subroutines(func.second->findPoint(BPatch_subroutine));
-        if (subroutines) {
-            for (auto subroutine : *subroutines) {
-                cout << subroutine->getCalledFunctionName() << endl;
-            }
-        } else {
-            cout << "no subroutines found." << endl;
-        }
+    for (auto thread : *functions) {
+      cout << thread.first << ":" << thread.second->getName() << endl;
+      enum_subroutines(thread.second);
+    }
+}
+
+void code_discover(BPatch_Vector<BPatch_function*> &newFuncs, BPatch_Vector<BPatch_function*> &modFuncs) {
+    for(auto func: newFuncs) {
+        cout << "new:" << func->getName() << endl;
+    }
+    for(auto func: modFuncs) {
+        cout << "mod:" << func->getName() << endl;
     }
 }
 
@@ -105,6 +118,7 @@ int main(int argc, char* argv[]) {
     }
     const char** params = get_params(argc, argv);
     params[0] = path->c_str();
+    bpatch.registerCodeDiscoveryCallback(code_discover);
     unique_ptr<BPatch_process> app(bpatch.processCreate(path->c_str(), params));
     if (!app) {
         printf("Failed to start %s\n", path->c_str());
