@@ -37,9 +37,9 @@ unique_ptr<string> get_path(char* exe) {
         dir = strtok(nullptr, ":");
     }
     char* resolved_path = realpath(exe, nullptr);
-    if(resolved_path) {
+    if (resolved_path) {
         fullpath->assign(resolved_path);
-        if(access(fullpath->c_str(), F_OK) == 0) {
+        if (access(fullpath->c_str(), F_OK) == 0) {
             return fullpath;
         }
     }
@@ -71,22 +71,22 @@ unique_ptr<func_map> get_entry_points(BPatch_process* proc) {
     unique_ptr<vector<BPatch_thread*>> threads(new vector<BPatch_thread*>);
     unique_ptr<func_map> functions(new func_map);
     proc->getThreads(*threads);
-    for(BPatch_thread* th: *threads) {
+    for (BPatch_thread* th : *threads) {
         // getCallStack?
-        functions->emplace(th->getTid(),th->getInitialFunc());
+        functions->emplace(th->getTid(), th->getInitialFunc());
     }
     return functions;
 }
 
 void hook_functions(BPatch_process* proc) {
     unique_ptr<func_map> functions = get_entry_points(proc);
-    for(auto func: *functions) {
+    for (auto func : *functions) {
         cout << func.first << ":" << func.second->getName() << endl;
         unique_ptr<vector<BPatch_point*>> subroutines(func.second->findPoint(BPatch_subroutine));
-        if(subroutines) {
-        for(auto subroutine: *subroutines) {
-            cout << subroutine->getCalledFunctionName() << endl;
-        }
+        if (subroutines) {
+            for (auto subroutine : *subroutines) {
+                cout << subroutine->getCalledFunctionName() << endl;
+            }
         } else {
             cout << "no subroutines found." << endl;
         }
