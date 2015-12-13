@@ -25,7 +25,8 @@
 
 #define DEFAULT_ENTRY_POINT "main"
 
-unique_ptr<string> get_path(char* exe) {
+unique_ptr<string> get_path(string exe) {
+    // FIXME: make more idiomatically c++
     char* path = getenv("PATH");
     char* dir = strtok(path, ":");
     unique_ptr<string> fullpath(new string);
@@ -38,7 +39,7 @@ unique_ptr<string> get_path(char* exe) {
         }
         dir = strtok(nullptr, ":");
     }
-    char* resolved_path = realpath(exe, nullptr);
+    char* resolved_path = realpath(exe.c_str(), nullptr);
     if (resolved_path) {
         fullpath->assign(resolved_path);
         if (access(fullpath->c_str(), F_OK) == 0) {
@@ -48,33 +49,27 @@ unique_ptr<string> get_path(char* exe) {
     return nullptr;
 }
 
-const char** get_params(int argc, char* argv[]) {
-    // FIXME: make more idiomatically c++
-    int nargs = argc > 2 ? argc - 1 : 2;
-    unsigned int paramlen = static_cast<unsigned int>(nargs) * sizeof(char*);
-    char** params = static_cast<char**>(malloc(paramlen));
-    if (argc > 2) {
-        for (int i = 1; i < nargs; i++) {
-            size_t arglen = strlen(argv[i + 1]);
-            params[i] = static_cast<char*>(malloc(arglen + 1));
-            memset(params[i], 0, arglen + 1);
-            strncpy(params[i], argv[i + 1], arglen + 1);
-        }
-        params[nargs] = nullptr;
-    } else {
-        params[nargs - 1] = nullptr;
+const char** get_params(vector<string> args) {
+    char** params = static_cast<char**>(malloc(args.size() * sizeof(char*)));
+    // Skip the exe, that's resolved by get_path
+    for (size_t i = 1; i < args.size(); i++) {
+        size_t arglen = args[i].size() + 1;
+        params[i] = static_cast<char*>(malloc(arglen));
+        memset(params[i], 0, arglen);
+        strcpy(params[i], args[i].c_str());
     }
+    params[args.size()] = nullptr;
     return const_cast<const char**>(params);
 }
 
-unique_ptr<vector<BPatch_function*>> get_entry_points(BPatch_process* proc) {
+unique_ptr<vector<BPatch_function*>> DynProf::get_entry_point() {
     unique_ptr<vector<BPatch_function*>> funcs(new vector<BPatch_function*>);
-    // Should only return one function most of the time
-    proc->getImage()->findFunction(DEFAULT_ENTRY_POINT, *funcs);
+    // Should only return one function.
+    app->getImage()->findFunction(DEFAULT_ENTRY_POINT, *funcs);
     return funcs;
 }
 
-void enum_subroutines(BPatch_function func) {
+void DynProf::enum_subroutines(BPatch_function func) {
     unique_ptr<vector<BPatch_point*>> subroutines(func.findPoint(BPatch_subroutine));
     if (!subroutines) {
         return;
@@ -93,21 +88,42 @@ void enum_subroutines(BPatch_function func) {
     }
 }
 
-void hook_functions(BPatch_process* proc) {
-    unique_ptr<vector<BPatch_function*>> functions = get_entry_points(proc);
+void DynProf::hook_functions() {
+    unique_ptr<vector<BPatch_function*>> functions = get_entry_point();
     for (auto func : *functions) {
         cout << "func:" << func->getName() << endl;
         enum_subroutines(*func);
     }
 }
 
+/*
 void code_discover(BPatch_Vector<BPatch_function*>& newFuncs,
-                   BPatch_Vector<BPatch_function*>& modFuncs) {
+        BPatch_Vector<BPatch_function*>& modFuncs) {
     for (auto func : newFuncs) {
         cout << "new:" << func->getName() << endl;
     }
     for (auto func : modFuncs) {
         cout << "mod:" << func->getName() << endl;
+    }
+}
+*/
+
+void DynProf::start() {
+    // bpatch.registerCodeDiscoveryCallback(code_discover);
+    app = bpatch.processCreate(path.c_str(), params);
+    if (!app) {
+        cerr << "Failed to start " << path << endl;
+        exit(1);
+    } else {
+        cerr << "Successfully started profiling" << endl;
+    }
+    hook_functions();
+    app->continueExecution();
+}
+
+void DynProf::waitForExit() {
+    while (!app->isTerminated()) {
+        bpatch.waitForStatusChange();
     }
 }
 
@@ -116,26 +132,18 @@ int main(int argc, char* argv[]) {
         printf("Usage: ./dyninst [program] arg1,arg2,arg3...\n");
         return 1;
     }
-    unique_ptr<string> path = get_path(argv[1]);
+    vector<string> args(argv, argv + argc);
+    unique_ptr<string> path = get_path(args[1]);
     if (!path) {
-        printf("%s not found in path\n", argv[1]);
+        cerr << args[1] << " not found in path" << endl;
         return 1;
     }
-    const char** params = get_params(argc, argv);
+    args.erase(args.begin());
+    const char** params = get_params(args);
+    // Re-add original path.
     params[0] = path->c_str();
-    BPatch bpatch;
-    bpatch.registerCodeDiscoveryCallback(code_discover);
-    unique_ptr<BPatch_process> app(bpatch.processCreate(path->c_str(), params));
-    if (!app) {
-        printf("Failed to start %s\n", path->c_str());
-        return 1;
-    } else {
-        printf("Successfully started.\n");
-    }
-    hook_functions(app.get());
-    app->continueExecution();
-    while (!app->isTerminated()) {
-        bpatch.waitForStatusChange();
-    }
+    DynProf prof(*path, params);
+    prof.start();
+    prof.waitForExit();
     return 0;
 }

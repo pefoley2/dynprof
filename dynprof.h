@@ -17,17 +17,35 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef DYNPROF_H
+#define DYNPROF_H
+
+// PCH
+#include "dynprof.h"
+
 #define DEFAULT_ENTRY_POINT "main"
 
-unique_ptr<string> get_path(char* exe);
+class DynProf {
+   public:
+    DynProf(string _path, const char** _params) : path(_path), params(_params) {}
+    void start();
+    void waitForExit();
 
-const char** get_params(int argc, char* argv[]);
+   private:
+    string path;
+    const char** params;
+    BPatch_process* app;
+    BPatch bpatch;
+    unique_ptr<vector<BPatch_function*>> get_entry_point();
+    void hook_functions();
+    void enum_subroutines(BPatch_function func);
+};
 
-unique_ptr<vector<BPatch_function*>> get_entry_points(BPatch_process* proc);
+const char** get_params(vector<string> args);
+unique_ptr<string> get_path(string exe);
 
-void enum_subroutines(BPatch_function func);
-
-void hook_functions(BPatch_process* proc);
-
+/*
 void code_discover(BPatch_Vector<BPatch_function*>& newFuncs,
-                   BPatch_Vector<BPatch_function*>& modFuncs);
+        BPatch_Vector<BPatch_function*>& modFuncs);
+*/
+#endif

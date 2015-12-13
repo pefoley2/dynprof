@@ -4,8 +4,8 @@ CC = clang
 CXX = clang++
 
 CFLAGS = -Wall -Wextra -Winvalid-pch -Weverything -Wno-c++98-compat
-CFLAGS += -O2
-#CFLAGS += -ggdb3
+#CFLAGS += -O2
+CFLAGS += -ggdb3
 #CFLAGS += -O1 -fno-omit-frame-pointer
 #CFLAGS += -fsanitize=address
 
