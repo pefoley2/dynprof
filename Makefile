@@ -1,13 +1,16 @@
-CFLAGS = -Wall -Wextra
-CXXFLAGS = -std=c++11 -Wall -Wextra -L/usr/local/lib -lcommon -ldyninstAPI
+CFLAGS = -Wall -Wextra -Winvalid-pch
 CFLAGS += -ggdb3
 #CFLAGS += -O2
-#CFLAGS += -fsanitize=address
+CFLAGS += -fsanitize=address
+CXXFLAGS = $(CFLAGS) -std=c++11
+LDFLAGS = -L/usr/local/lib -lcommon -ldyninstAPI
 all: dynprof example/test
 example/test: example/test.c
 	gcc $(CFLAGS) -o $@ $<
-dynprof: dynprof.cc
-	g++ $(CFLAGS) $(CXXFLAGS) -o $@ $<
+%.h.gch: %.h
+	g++ $(CXXFLAGS) -o $@ $<
+dynprof: dynprof.cc dyninst.h.gch
+	g++ $(CXXFLAGS) $(LDFLAGS) -o $@ $<
 
 test: all
 	./dynprof example/test

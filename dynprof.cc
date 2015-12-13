@@ -17,9 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <BPatch.h>
-#include <BPatch_function.h>
-#include <BPatch_point.h>
+// PCH
+#include "dyninst.h"
 
 #include <unordered_map>
 
