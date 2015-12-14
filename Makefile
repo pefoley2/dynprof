@@ -25,5 +25,10 @@ dynprof: dynprof.cc dynprof.h dyninst.h.gch
 format:
 	clang-format -i -style="{BasedOnStyle: google, IndentWidth: 4, ColumnLimit: 100}" *.cc *.h example/*.c
 
+analyze:
+	clang++ --analyze --std=c++11 -o /dev/null dynprof.cc
+
 test: all
 	./dynprof example/test
+
+.PHONY: all format analyze test
