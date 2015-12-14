@@ -17,11 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef DYNPROF_H
-#define DYNPROF_H
-
 // PCH
-#include "dynprof.h"
+#include "dyninst.h"
 
 #include <unordered_map>
 
@@ -29,7 +26,10 @@
 
 class DynProf {
    public:
-    DynProf(string _path, const char** _params) : path(_path), params(_params) {}
+    DynProf(string _path, const char** _params)
+        : path(_path), params(_params), app(), bpatch(), func_map() {}
+    DynProf(const DynProf&) = delete;
+    DynProf& operator=(const DynProf&) = delete;
     void start();
     void waitForExit();
 
@@ -48,7 +48,6 @@ const char** get_params(vector<string> args);
 unique_ptr<string> get_path(string exe);
 
 /*
-void code_discover(BPatch_Vector<BPatch_function*>& newFuncs,
-        BPatch_Vector<BPatch_function*>& modFuncs);
-*/
-#endif
+   void code_discover(BPatch_Vector<BPatch_function*>& newFuncs,
+   BPatch_Vector<BPatch_function*>& modFuncs);
+   */

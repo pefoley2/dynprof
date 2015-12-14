@@ -1,15 +1,15 @@
-#CC = gcc
-#CXX = g++
-CC = clang
-CXX = clang++
+CC = gcc
+CXX = g++
+#CC = clang
+#CXX = clang++
 
-CFLAGS = -Wall -Wextra -Winvalid-pch -Weverything -Wno-c++98-compat
+CFLAGS = -Wall -Wextra -Winvalid-pch -Wpedantic
 CFLAGS += -ggdb3
 #CFLAGS += -O2
 #CFLAGS += -fsanitize=address
 
-CXXFLAGS = $(CFLAGS) -std=c++11
-LDFLAGS = -L/usr/local/lib -lcommon -ldyninstAPI
+CXXFLAGS = $(CFLAGS) -std=c++11 -Weffc++
+LDFLAGS = -L/usr/local/lib -ldyninstAPI
 
 all: dynprof example/test
 

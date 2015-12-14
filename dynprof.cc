@@ -17,11 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-// PCH
-#include "dyninst.h"
 #include "dynprof.h"
-
-#include <unordered_map>
 
 #define DEFAULT_ENTRY_POINT "main"
 
