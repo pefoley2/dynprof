@@ -50,7 +50,7 @@ unique_ptr<string> get_path(string exe) {
 }
 
 const char** get_params(vector<string> args) {
-    char** params = static_cast<char**>(malloc(args.size() * sizeof(char*)));
+    char** params = static_cast<char**>(malloc((args.size() + 1) * sizeof(char*)));
     // Skip the exe, that's resolved by get_path
     for (size_t i = 1; i < args.size(); i++) {
         size_t arglen = args[i].size() + 1;
@@ -58,7 +58,7 @@ const char** get_params(vector<string> args) {
         memset(params[i], 0, arglen);
         strcpy(params[i], args[i].c_str());
     }
-    params[args.size()-1] = nullptr;
+    params[args.size()] = nullptr;
     return const_cast<const char**>(params);
 }
 
@@ -69,8 +69,8 @@ unique_ptr<vector<BPatch_function*>> DynProf::get_entry_point() {
     return funcs;
 }
 
-void DynProf::enum_subroutines(BPatch_function func) {
-    unique_ptr<vector<BPatch_point*>> subroutines(func.findPoint(BPatch_subroutine));
+void DynProf::enum_subroutines(BPatch_function* func) {
+    unique_ptr<vector<BPatch_point*>> subroutines(func->findPoint(BPatch_subroutine));
     if (!subroutines) {
         return;
     }
@@ -79,10 +79,13 @@ void DynProf::enum_subroutines(BPatch_function func) {
         if (subfunc) {
             // Ignore internal functions.
             if (subfunc->getName().compare(0, 2, "__") == 0) {
-                cout << "skip:" << subfunc->getName() << endl;
+                // cout << "skip:" << subfunc->getName() << endl;
+            } else if (func_map.count(subfunc->getName())) {
+                // cout << "already enumed:" << subfunc->getName() << endl;
             } else {
                 cout << "sub:" << subfunc->getName() << endl;
-                enum_subroutines(*subfunc);
+                func_map[subfunc->getName()] = subfunc->getBaseAddr();
+                enum_subroutines(subfunc);
             }
         }
     }
@@ -92,7 +95,7 @@ void DynProf::hook_functions() {
     unique_ptr<vector<BPatch_function*>> functions = get_entry_point();
     for (auto func : *functions) {
         cout << "func:" << func->getName() << endl;
-        enum_subroutines(*func);
+        enum_subroutines(func);
     }
 }
 

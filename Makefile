@@ -4,9 +4,8 @@ CC = clang
 CXX = clang++
 
 CFLAGS = -Wall -Wextra -Winvalid-pch -Weverything -Wno-c++98-compat
-#CFLAGS += -O2
 CFLAGS += -ggdb3
-#CFLAGS += -O1 -fno-omit-frame-pointer
+#CFLAGS += -O2
 #CFLAGS += -fsanitize=address
 
 CXXFLAGS = $(CFLAGS) -std=c++11
@@ -22,6 +21,9 @@ example/test: example/test.c
 
 dynprof: dynprof.cc dynprof.h dyninst.h.gch
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -include dyninst.h -o $@ $<
+
+format:
+	clang-format -i -style="{BasedOnStyle: google, IndentWidth: 4, ColumnLimit: 100}" *.cc *.h example/*.c
 
 test: all
 	./dynprof example/test

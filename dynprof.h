@@ -23,6 +23,8 @@
 // PCH
 #include "dynprof.h"
 
+#include <unordered_map>
+
 #define DEFAULT_ENTRY_POINT "main"
 
 class DynProf {
@@ -36,9 +38,10 @@ class DynProf {
     const char** params;
     BPatch_process* app;
     BPatch bpatch;
+    unordered_map<string, void*> func_map;
     unique_ptr<vector<BPatch_function*>> get_entry_point();
     void hook_functions();
-    void enum_subroutines(BPatch_function func);
+    void enum_subroutines(BPatch_function* func);
 };
 
 const char** get_params(vector<string> args);
