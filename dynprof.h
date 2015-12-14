@@ -20,6 +20,10 @@
 // PCH
 #include "dyninst.h"
 
+#if DYNINST_MAJOR < 9
+#error "Please use Dyninst 9.0 or newer"
+#endif
+
 #include <unordered_map>
 
 #define DEFAULT_ENTRY_POINT "main"
