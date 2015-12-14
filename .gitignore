@@ -2,5 +2,6 @@ dynprof
 dyninst.h.gch
 CMakeCache.txt
 CMakeFiles
+work
 example/test
 *.swp

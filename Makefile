@@ -28,6 +28,9 @@ format:
 analyze:
 	clang++ --analyze --std=c++11 -o /dev/null dynprof.cc
 
+tidy:
+	clang-tidy -checks='*' -p work dynprof.cc
+
 test: all
 	./dynprof example/test
 

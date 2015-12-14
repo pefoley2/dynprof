@@ -52,7 +52,7 @@ const char** get_params(vector<string> args) {
         size_t arglen = args[i].size() + 1;
         params[i] = static_cast<char*>(malloc(arglen));
         memset(params[i], 0, arglen);
-        strcpy(params[i], args[i].c_str());
+        strncpy(params[i], args[i].c_str(), args[i].size() + 1);
     }
     params[args.size()] = nullptr;
     return const_cast<const char**>(params);
