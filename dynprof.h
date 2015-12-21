@@ -46,6 +46,7 @@ class DynProf {
     unique_ptr<vector<BPatch_function*>> get_entry_point();
     void hook_functions();
     void enum_subroutines(BPatch_function* func);
+    void createSnippets(BPatch_function* func);
 };
 
 const char** get_params(vector<string> args);

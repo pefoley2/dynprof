@@ -14,7 +14,8 @@ void bar(unsigned int x) { sleep(x); }
 void baz(unsigned int x) { sleep(x); }
 
 int main() {
-    // printf("Before\n");
+    int i = 5;
+    printf("Before %d\n", i);
     foo(1);
     // printf("After\n");
     return 0;

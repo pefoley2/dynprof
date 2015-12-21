@@ -64,7 +64,7 @@ unique_ptr<vector<BPatch_function*>> DynProf::get_entry_point() {
 }
 
 void DynProf::enum_subroutines(BPatch_function* func) {
-    // hook time @ BPatch_entry/BPatch_exit.
+    createSnippets(func);
     unique_ptr<vector<BPatch_point*>> subroutines(func->findPoint(BPatch_subroutine));
     if (!subroutines) {
         // This function doesn't call any others.
@@ -75,11 +75,12 @@ void DynProf::enum_subroutines(BPatch_function* func) {
         if (subfunc) {
             // Ignore library functions.
             if (subfunc->isSharedLib()) {
-                 // cout << "skip:" << subfunc->getName() << endl;
+                // cout << "skip:" << subfunc->getName() << endl;
             } else if (func_map.count(subfunc->getName())) {
                 // cout << "already enumed:" << subfunc->getName() << endl;
             } else {
                 cout << "sub:" << subfunc->getName() << endl;
+                // FIXME: do a better job of this
                 func_map[subfunc->getName()] = subfunc->getBaseAddr();
                 enum_subroutines(subfunc);
             }
@@ -94,6 +95,46 @@ void DynProf::hook_functions() {
     for (auto func : *functions) {
         cout << "func:" << func->getName() << endl;
         enum_subroutines(func);
+    }
+}
+
+void DynProf::createSnippets(BPatch_function* func) {
+    unique_ptr<vector<BPatch_point*>> entry_point(func->findPoint(BPatch_entry));
+    if (entry_point->size() != 1) {
+        cerr << "Could not find entry point for " << func->getName() << endl;
+        return;
+    }
+
+    unique_ptr<vector<BPatch_point*>> exit_point(func->findPoint(BPatch_exit));
+    if (exit_point->size() != 1) {
+        cerr << "Could not find exit point for " << func->getName() << endl;
+        return;
+    }
+
+    vector<BPatch_snippet*> entry_args;
+    entry_args.push_back(new BPatch_constExpr("Entering %s\n"));
+    entry_args.push_back(new BPatch_constExpr(func->getName().c_str()));
+    vector<BPatch_snippet*> exit_args;
+    exit_args.push_back(new BPatch_constExpr("Exiting %s\n"));
+    exit_args.push_back(new BPatch_constExpr(func->getName().c_str()));
+
+    vector<BPatch_function*> printf_funcs;
+    app->getImage()->findFunction("printf", printf_funcs);
+    if (printf_funcs.size() != 1) {
+        cerr << "Could not find printf" << endl;
+        return;
+    }
+    BPatch_funcCallExpr entry_snippet(*printf_funcs.at(0), entry_args);
+    BPatch_funcCallExpr exit_snippet(*printf_funcs.at(0), exit_args);
+
+    app->beginInsertionSet();
+    /*BPatchSnippetHandle* entry = */ app->insertSnippet(entry_snippet, *entry_point->at(0),
+                                                         BPatch_callBefore);
+    /*BPatchSnippetHandle* exit = */ app->insertSnippet(exit_snippet, *exit_point->at(0),
+                                                        BPatch_callAfter);
+    if (!app->finalizeInsertionSet(true)) {
+        cerr << "Failed to insert snippets around " << func->getName() << endl;
+        return;
     }
 }
 
