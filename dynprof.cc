@@ -21,6 +21,7 @@
 
 unique_ptr<string> get_path(string exe) {
     // FIXME: make more idiomatically c++
+    // string.find_first_of() instead of strtok
     char* path = getenv("PATH");
     char* dir = strtok(path, ":");
     unique_ptr<string> fullpath(new string);
@@ -56,14 +57,8 @@ const char** get_params(vector<string> args) {
     return const_cast<const char**>(params);
 }
 
-unique_ptr<vector<BPatch_function*>> DynProf::get_entry_point() {
-    unique_ptr<vector<BPatch_function*>> funcs(new vector<BPatch_function*>);
-    // Should only return one function.
-    app->getImage()->findFunction(DEFAULT_ENTRY_POINT, *funcs);
-    return funcs;
-}
-
 void DynProf::enum_subroutines(BPatch_function* func) {
+    // Register entry/exit snippets.
     createSnippets(func);
     unique_ptr<vector<BPatch_point*>> subroutines(func->findPoint(BPatch_subroutine));
     if (!subroutines) {
@@ -88,7 +83,12 @@ void DynProf::enum_subroutines(BPatch_function* func) {
     }
 }
 
-// TODO: BPatchCodeDiscoveryCallback?
+unique_ptr<vector<BPatch_function*>> DynProf::get_entry_point() {
+    unique_ptr<vector<BPatch_function*>> funcs(new vector<BPatch_function*>);
+    // Should only return one function.
+    app->getImage()->findFunction(DEFAULT_ENTRY_POINT, *funcs);
+    return funcs;
+}
 
 void DynProf::hook_functions() {
     unique_ptr<vector<BPatch_function*>> functions = get_entry_point();
@@ -129,10 +129,8 @@ void DynProf::createSnippets(BPatch_function* func) {
     BPatch_funcCallExpr exit_snippet(*printf_funcs.at(0), exit_args);
 
     app->beginInsertionSet();
-    /*BPatchSnippetHandle* entry = */ app->insertSnippet(entry_snippet, *entry_point->at(0),
-                                                         BPatch_callBefore);
-    /*BPatchSnippetHandle* exit = */ app->insertSnippet(exit_snippet, *exit_point->at(0),
-                                                        BPatch_callAfter);
+    app->insertSnippet(entry_snippet, *entry_point->at(0), BPatch_callBefore);
+    app->insertSnippet(exit_snippet, *exit_point->at(0), BPatch_callAfter);
     if (!app->finalizeInsertionSet(true)) {
         cerr << "Failed to insert snippets around " << func->getName() << endl;
         return;
