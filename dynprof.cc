@@ -57,9 +57,17 @@ const char** get_params(vector<string> args) {
     return const_cast<const char**>(params);
 }
 
+void DynProf::recordFunc(BPatch_function* func) {
+    if(func_map.count(func) == 0) {
+        func_map.insert({{func,vector<BPatch_function*>()}});
+    }
+}
+
+
 void DynProf::enum_subroutines(BPatch_function* func) {
     // Register entry/exit snippets.
     createSnippets(func);
+    recordFunc(func);
     unique_ptr<vector<BPatch_point*>> subroutines(func->findPoint(BPatch_subroutine));
     if (!subroutines) {
         // This function doesn't call any others.
@@ -71,12 +79,9 @@ void DynProf::enum_subroutines(BPatch_function* func) {
             // Ignore library functions.
             if (subfunc->isSharedLib()) {
                 // cout << "skip:" << subfunc->getName() << endl;
-            } else if (func_map.count(subfunc->getName())) {
-                // cout << "already enumed:" << subfunc->getName() << endl;
             } else {
                 cout << "sub:" << subfunc->getName() << endl;
-                // FIXME: do a better job of this
-                func_map[subfunc->getName()] = subfunc->getBaseAddr();
+                func_map[func].push_back(subfunc);
                 enum_subroutines(subfunc);
             }
         }
@@ -93,7 +98,7 @@ unique_ptr<vector<BPatch_function*>> DynProf::get_entry_point() {
 void DynProf::hook_functions() {
     unique_ptr<vector<BPatch_function*>> functions = get_entry_point();
     for (auto func : *functions) {
-        cout << "func:" << func->getName() << endl;
+        cerr << "func:" << func->getName() << endl;
         enum_subroutines(func);
     }
 }
