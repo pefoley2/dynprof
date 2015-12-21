@@ -100,13 +100,13 @@ void DynProf::hook_functions() {
 
 void DynProf::createSnippets(BPatch_function* func) {
     unique_ptr<vector<BPatch_point*>> entry_point(func->findPoint(BPatch_entry));
-    if (entry_point->size() != 1) {
+    if (!entry_point || entry_point->size() == 0) {
         cerr << "Could not find entry point for " << func->getName() << endl;
         return;
     }
 
     unique_ptr<vector<BPatch_point*>> exit_point(func->findPoint(BPatch_exit));
-    if (exit_point->size() != 1) {
+    if (!exit_point || exit_point->size() == 0) {
         cerr << "Could not find exit point for " << func->getName() << endl;
         return;
     }
@@ -119,7 +119,8 @@ void DynProf::createSnippets(BPatch_function* func) {
     exit_args.push_back(new BPatch_constExpr(func->getName().c_str()));
 
     vector<BPatch_function*> printf_funcs;
-    app->getImage()->findFunction("printf", printf_funcs);
+    // printf isn't profilable.
+    app->getImage()->findFunction("printf", printf_funcs, true, true, true);
     if (printf_funcs.size() != 1) {
         cerr << "Could not find printf" << endl;
         return;
@@ -152,10 +153,11 @@ void DynProf::start() {
     app->continueExecution();
 }
 
-void DynProf::waitForExit() {
+int DynProf::waitForExit() {
     while (!app->isTerminated()) {
         bpatch.waitForStatusChange();
     }
+    return app->getExitCode();
 }
 
 int main(int argc, char* argv[]) {
@@ -175,6 +177,7 @@ int main(int argc, char* argv[]) {
     params[0] = path->c_str();
     DynProf prof(*path, params);
     prof.start();
-    prof.waitForExit();
-    return 0;
+    int status = prof.waitForExit();
+    cerr << "Program exited with status: " << status << endl;
+    return status;
 }

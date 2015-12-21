@@ -35,7 +35,7 @@ class DynProf {
     DynProf(const DynProf&) = delete;
     DynProf& operator=(const DynProf&) = delete;
     void start();
-    void waitForExit();
+    int waitForExit();
 
    private:
     string path;
