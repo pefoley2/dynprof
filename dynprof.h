@@ -50,8 +50,3 @@ class DynProf {
 
 const char** get_params(vector<string> args);
 unique_ptr<string> get_path(string exe);
-
-/*
-   void code_discover(BPatch_Vector<BPatch_function*>& newFuncs,
-   BPatch_Vector<BPatch_function*>& modFuncs);
-   */

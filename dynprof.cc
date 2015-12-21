@@ -19,8 +19,6 @@
 
 #include "dynprof.h"
 
-#define DEFAULT_ENTRY_POINT "main"
-
 unique_ptr<string> get_path(string exe) {
     // FIXME: make more idiomatically c++
     char* path = getenv("PATH");
@@ -66,16 +64,18 @@ unique_ptr<vector<BPatch_function*>> DynProf::get_entry_point() {
 }
 
 void DynProf::enum_subroutines(BPatch_function* func) {
+    // hook time @ BPatch_entry/BPatch_exit.
     unique_ptr<vector<BPatch_point*>> subroutines(func->findPoint(BPatch_subroutine));
     if (!subroutines) {
+        // This function doesn't call any others.
         return;
     }
     for (auto subroutine : *subroutines) {
         BPatch_function* subfunc = subroutine->getCalledFunction();
         if (subfunc) {
-            // Ignore internal functions.
-            if (subfunc->getName().compare(0, 2, "__") == 0) {
-                // cout << "skip:" << subfunc->getName() << endl;
+            // Ignore library functions.
+            if (subfunc->isSharedLib()) {
+                 // cout << "skip:" << subfunc->getName() << endl;
             } else if (func_map.count(subfunc->getName())) {
                 // cout << "already enumed:" << subfunc->getName() << endl;
             } else {
@@ -87,6 +87,8 @@ void DynProf::enum_subroutines(BPatch_function* func) {
     }
 }
 
+// TODO: BPatchCodeDiscoveryCallback?
+
 void DynProf::hook_functions() {
     unique_ptr<vector<BPatch_function*>> functions = get_entry_point();
     for (auto func : *functions) {
@@ -95,28 +97,17 @@ void DynProf::hook_functions() {
     }
 }
 
-/*
-void code_discover(BPatch_Vector<BPatch_function*>& newFuncs,
-        BPatch_Vector<BPatch_function*>& modFuncs) {
-    for (auto func : newFuncs) {
-        cout << "new:" << func->getName() << endl;
-    }
-    for (auto func : modFuncs) {
-        cout << "mod:" << func->getName() << endl;
-    }
-}
-*/
-
 void DynProf::start() {
-    // bpatch.registerCodeDiscoveryCallback(code_discover);
+    cerr << "Preparing to profile " << path << endl;
     app = bpatch.processCreate(path.c_str(), params);
     if (!app) {
         cerr << "Failed to start " << path << endl;
         exit(1);
     } else {
-        cerr << "Successfully started profiling" << endl;
+        cerr << "Process loaded; Enumerating functions" << endl;
     }
     hook_functions();
+    cerr << "Resuming execution" << endl;
     app->continueExecution();
 }
 
@@ -128,7 +119,7 @@ void DynProf::waitForExit() {
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        printf("Usage: ./dyninst [program] arg1,arg2,arg3...\n");
+        cerr << "Usage: ./dyninst [program] arg1,arg2,arg3..." << endl;
         return 1;
     }
     vector<string> args(argv, argv + argc);
@@ -139,7 +130,7 @@ int main(int argc, char* argv[]) {
     }
     args.erase(args.begin());
     const char** params = get_params(args);
-    // Re-add original path.
+    // set argv[0] to the original path.
     params[0] = path->c_str();
     DynProf prof(*path, params);
     prof.start();
