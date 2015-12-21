@@ -107,6 +107,16 @@ void DynProf::hook_functions() {
     }
 }
 
+/*
+void DynProf::dumpModules() {
+    vector<BPatch_module*>* modules = app->getImage()->getModules();
+    for(auto mod: *modules) {
+        char foo[1024];
+        cerr << "mod:" << mod->getName(foo, 1024) << endl;
+    }
+}
+*/
+
 void DynProf::createSnippets(BPatch_function* func) {
     unique_ptr<vector<BPatch_point*>> entry_point(func->findPoint(BPatch_entry));
     if (!entry_point || entry_point->size() == 0) {
@@ -134,6 +144,10 @@ void DynProf::createSnippets(BPatch_function* func) {
         cerr << "Could not find printf" << endl;
         return;
     }
+    vector<BPatch_function*> clock_funcs;
+    app->getImage()->findFunction("clock_gettime", clock_funcs);
+    //TODO: keep track of the time...
+
     BPatch_funcCallExpr entry_snippet(*printf_funcs.at(0), entry_args);
     BPatch_funcCallExpr exit_snippet(*printf_funcs.at(0), exit_args);
 

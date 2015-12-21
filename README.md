@@ -12,3 +12,5 @@ Run `make`
 - Handle errors from system functions, especially malloc
 - Use more c++ as opposed to c functionality.
 - Don't leak memory
+- Dynamically loaded code?
+- insertInitCallback/insertFiniCallback
