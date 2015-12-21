@@ -28,6 +28,15 @@
 
 #define DEFAULT_ENTRY_POINT "main"
 
+class FuncInfo {
+    public:
+        FuncInfo() : children() {}
+        void addChild(BPatch_function*);
+    private:
+    vector<BPatch_function*> children;
+};
+
+
 class DynProf {
    public:
     DynProf(string _path, const char** _params)
@@ -42,7 +51,7 @@ class DynProf {
     const char** params;
     BPatch_process* app;
     BPatch bpatch;
-    unordered_map<BPatch_function*, vector<BPatch_function*>> func_map;
+    unordered_map<BPatch_function*, FuncInfo*> func_map;
     unique_ptr<vector<BPatch_function*>> get_entry_point();
     void hook_functions();
     void enum_subroutines(BPatch_function* func);

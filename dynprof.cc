@@ -57,9 +57,13 @@ const char** get_params(vector<string> args) {
     return const_cast<const char**>(params);
 }
 
+void FuncInfo::addChild(BPatch_function* func) {
+    children.push_back(func);
+}
+
 void DynProf::recordFunc(BPatch_function* func) {
     if(func_map.count(func) == 0) {
-        func_map.insert({{func,vector<BPatch_function*>()}});
+        func_map.insert(make_pair(func,new FuncInfo));
     }
 }
 
@@ -81,7 +85,7 @@ void DynProf::enum_subroutines(BPatch_function* func) {
                 // cout << "skip:" << subfunc->getName() << endl;
             } else {
                 cout << "sub:" << subfunc->getName() << endl;
-                func_map[func].push_back(subfunc);
+                func_map[func]->addChild(subfunc);
                 enum_subroutines(subfunc);
             }
         }
