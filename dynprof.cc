@@ -82,7 +82,7 @@ void DynProf::enum_subroutines(BPatch_function* func) {
     for (auto subroutine : *subroutines) {
         BPatch_function* subfunc = subroutine->getCalledFunction();
         if (subfunc) {
-            // TODO: deal with library functions.
+            // TODO(peter): deal with library functions.
             if (subfunc->isSharedLib()) {
                 // cout << "skip:" << subfunc->getName() << endl;
             } else {
@@ -138,7 +138,7 @@ void DynProf::createSnippets(BPatch_function* func) {
     }
     vector<BPatch_function*> clock_funcs;
     app->getImage()->findFunction("clock_gettime", clock_funcs);
-    // TODO: keep track of the time...
+    // TODO(peter): keep track of the time...
 
     BPatch_arithExpr incCount(
         BPatch_assign, func_map[func]->getCount(),
@@ -162,16 +162,16 @@ void DynProf::createSnippets(BPatch_function* func) {
 void DynProf::start() {
     cerr << "Preparing to profile " << path << endl;
     app = bpatch.processCreate(path.c_str(), params);
-    if (app->isMultithreadCapable()) {
-        cerr << "Multithreading is not yet handled." << endl;
-        exit(1);
-    }
     if (!app) {
         cerr << "Failed to load " << path << endl;
         exit(1);
-    } else {
-        cerr << "Process loaded; Enumerating functions" << endl;
     }
+    if (app->isMultithreadCapable()) {
+        // TODO(peter): handle entry points other than main().
+        cerr << "Multithreading is not yet handled." << endl;
+        exit(1);
+    }
+    cerr << "Process loaded; Enumerating functions" << endl;
     hook_functions();
     cerr << "Resuming execution" << endl;
     app->continueExecution();
