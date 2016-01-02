@@ -30,10 +30,14 @@
 
 class FuncInfo {
     public:
-        FuncInfo() : children() {}
+        FuncInfo(BPatch_variableExpr* _count) : children(), count(_count) {}
+        FuncInfo(const FuncInfo&) = delete;
+        FuncInfo& operator=(const FuncInfo&) = delete;
         void addChild(BPatch_function*);
+        BPatch_variableExpr getCount();
     private:
     vector<BPatch_function*> children;
+    BPatch_variableExpr* count;
 };
 
 
@@ -45,6 +49,7 @@ class DynProf {
     DynProf& operator=(const DynProf&) = delete;
     void start();
     int waitForExit();
+    void printCallCounts();
 
    private:
     string path;

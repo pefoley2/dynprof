@@ -61,17 +61,24 @@ void FuncInfo::addChild(BPatch_function* func) {
     children.push_back(func);
 }
 
+BPatch_variableExpr FuncInfo::getCount() {
+    return *count;
+}
+
 void DynProf::recordFunc(BPatch_function* func) {
-    if(func_map.count(func) == 0) {
-        func_map.insert(make_pair(func,new FuncInfo));
-    }
+    BPatch_variableExpr *count = app->malloc(*app->getImage()->findType("int"));
+    func_map.insert(make_pair(func,new FuncInfo(count)));
 }
 
 
 void DynProf::enum_subroutines(BPatch_function* func) {
+    // Already visited.
+    if(func_map.count(func)) {
+        return;
+    }
     // Register entry/exit snippets.
-    createSnippets(func);
     recordFunc(func);
+    createSnippets(func);
     unique_ptr<vector<BPatch_point*>> subroutines(func->findPoint(BPatch_subroutine));
     if (!subroutines) {
         // This function doesn't call any others.
@@ -82,8 +89,6 @@ void DynProf::enum_subroutines(BPatch_function* func) {
         if (subfunc) {
             // TODO: deal with library functions.
             if (subfunc->isSharedLib()) {
-                // cout << "skip:" << subfunc->getName() << endl;
-            } else if(func_map.count(subfunc) > 0) {
                 // cout << "skip:" << subfunc->getName() << endl;
             } else {
                 cout << "sub:" << subfunc->getName() << endl;
@@ -140,11 +145,18 @@ void DynProf::createSnippets(BPatch_function* func) {
     app->getImage()->findFunction("clock_gettime", clock_funcs);
     //TODO: keep track of the time...
 
+
+    BPatch_arithExpr incCount(BPatch_assign, func_map[func]->getCount(),
+            BPatch_arithExpr(BPatch_plus, func_map[func]->getCount(), BPatch_constExpr(1)));
+
     BPatch_funcCallExpr entry_snippet(*printf_funcs.at(0), entry_args);
     BPatch_funcCallExpr exit_snippet(*printf_funcs.at(0), exit_args);
 
+    vector<BPatch_snippet*> entry_vec{&incCount,&entry_snippet};
+    BPatch_sequence entry_seq(entry_vec);
+
     app->beginInsertionSet();
-    app->insertSnippet(entry_snippet, *entry_point->at(0), BPatch_callBefore);
+    app->insertSnippet(entry_seq, *entry_point->at(0), BPatch_callBefore);
     app->insertSnippet(exit_snippet, *exit_point->at(0), BPatch_callAfter);
     if (!app->finalizeInsertionSet(true)) {
         cerr << "Failed to insert snippets around " << func->getName() << endl;
@@ -177,6 +189,16 @@ int DynProf::waitForExit() {
     return app->getExitCode();
 }
 
+void DynProf::printCallCounts() {
+    int count;
+    for(auto& func: func_map) {
+        func.second->getCount().readValue(&count);
+        if(count) {
+            cerr << func.first->getName() << ":" << count << endl;
+        }
+    }
+}
+
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         cerr << "Usage: ./dyninst [program] arg1,arg2,arg3..." << endl;
@@ -195,6 +217,7 @@ int main(int argc, char* argv[]) {
     DynProf prof(*path, params);
     prof.start();
     int status = prof.waitForExit();
+    prof.printCallCounts();
     cerr << "Program exited with status: " << status << endl;
     return status;
 }
