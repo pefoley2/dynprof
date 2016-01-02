@@ -80,8 +80,10 @@ void DynProf::enum_subroutines(BPatch_function* func) {
     for (auto subroutine : *subroutines) {
         BPatch_function* subfunc = subroutine->getCalledFunction();
         if (subfunc) {
-            // Ignore library functions.
+            // TODO: deal with library functions.
             if (subfunc->isSharedLib()) {
+                // cout << "skip:" << subfunc->getName() << endl;
+            } else if(func_map.count(subfunc) > 0) {
                 // cout << "skip:" << subfunc->getName() << endl;
             } else {
                 cout << "sub:" << subfunc->getName() << endl;
@@ -106,16 +108,6 @@ void DynProf::hook_functions() {
         enum_subroutines(func);
     }
 }
-
-/*
-void DynProf::dumpModules() {
-    vector<BPatch_module*>* modules = app->getImage()->getModules();
-    for(auto mod: *modules) {
-        char foo[1024];
-        cerr << "mod:" << mod->getName(foo, 1024) << endl;
-    }
-}
-*/
 
 void DynProf::createSnippets(BPatch_function* func) {
     unique_ptr<vector<BPatch_point*>> entry_point(func->findPoint(BPatch_entry));
@@ -163,8 +155,12 @@ void DynProf::createSnippets(BPatch_function* func) {
 void DynProf::start() {
     cerr << "Preparing to profile " << path << endl;
     app = bpatch.processCreate(path.c_str(), params);
+    if(app->isMultithreadCapable()) {
+        cerr << "Multithreading is not yet handled." << endl;
+        exit(1);
+    }
     if (!app) {
-        cerr << "Failed to start " << path << endl;
+        cerr << "Failed to load " << path << endl;
         exit(1);
     } else {
         cerr << "Process loaded; Enumerating functions" << endl;

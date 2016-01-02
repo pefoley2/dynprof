@@ -1,19 +1,19 @@
 #include <stdio.h>
 #include <unistd.h>
 
-void foo(unsigned int);
-void bar(unsigned int);
-void baz(unsigned int);
+void foo(double);
+void bar(double);
+void baz(double);
 
-void foo(unsigned int x) {
+void foo(double x) {
     bar(x);
     sleep(x);
     baz(x);
 }
-void bar(unsigned int x) { sleep(x); }
-void baz(unsigned int x) { sleep(x); }
+void bar(double x) { sleep(x); }
+void baz(double x) { sleep(x); }
 
 int main() {
-    foo(1);
+    foo(0.01);
     return 0;
 }
