@@ -168,6 +168,7 @@ void DynProf::start() {
     }
     if (app->isMultithreadCapable()) {
         // TODO(peter): handle entry points other than main().
+        // app->getThreads()
         cerr << "Multithreading is not yet handled." << endl;
         exit(1);
     }
@@ -189,7 +190,7 @@ void DynProf::printCallCounts() {
     for (auto& func : func_map) {
         func.second->getCount().readValue(&count);
         if (count) {
-            cerr << func.first->getName() << ":" << count << endl;
+            cerr << count << ":" << func.first->getName() << endl;
         }
     }
 }
