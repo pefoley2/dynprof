@@ -57,23 +57,18 @@ const char** get_params(vector<string> args) {
     return const_cast<const char**>(params);
 }
 
-void FuncInfo::addChild(BPatch_function* func) {
-    children.push_back(func);
-}
+void FuncInfo::addChild(BPatch_function* func) { children.push_back(func); }
 
-BPatch_variableExpr FuncInfo::getCount() {
-    return *count;
-}
+BPatch_variableExpr FuncInfo::getCount() { return *count; }
 
 void DynProf::recordFunc(BPatch_function* func) {
-    BPatch_variableExpr *count = app->malloc(*app->getImage()->findType("int"));
-    func_map.insert(make_pair(func,new FuncInfo(count)));
+    BPatch_variableExpr* count = app->malloc(*app->getImage()->findType("int"));
+    func_map.insert(make_pair(func, new FuncInfo(count)));
 }
-
 
 void DynProf::enum_subroutines(BPatch_function* func) {
     // Already visited.
-    if(func_map.count(func)) {
+    if (func_map.count(func)) {
         return;
     }
     // Register entry/exit snippets.
@@ -143,16 +138,16 @@ void DynProf::createSnippets(BPatch_function* func) {
     }
     vector<BPatch_function*> clock_funcs;
     app->getImage()->findFunction("clock_gettime", clock_funcs);
-    //TODO: keep track of the time...
+    // TODO: keep track of the time...
 
-
-    BPatch_arithExpr incCount(BPatch_assign, func_map[func]->getCount(),
-            BPatch_arithExpr(BPatch_plus, func_map[func]->getCount(), BPatch_constExpr(1)));
+    BPatch_arithExpr incCount(
+        BPatch_assign, func_map[func]->getCount(),
+        BPatch_arithExpr(BPatch_plus, func_map[func]->getCount(), BPatch_constExpr(1)));
 
     BPatch_funcCallExpr entry_snippet(*printf_funcs.at(0), entry_args);
     BPatch_funcCallExpr exit_snippet(*printf_funcs.at(0), exit_args);
 
-    vector<BPatch_snippet*> entry_vec{&incCount,&entry_snippet};
+    vector<BPatch_snippet*> entry_vec{&incCount, &entry_snippet};
     BPatch_sequence entry_seq(entry_vec);
 
     app->beginInsertionSet();
@@ -167,7 +162,7 @@ void DynProf::createSnippets(BPatch_function* func) {
 void DynProf::start() {
     cerr << "Preparing to profile " << path << endl;
     app = bpatch.processCreate(path.c_str(), params);
-    if(app->isMultithreadCapable()) {
+    if (app->isMultithreadCapable()) {
         cerr << "Multithreading is not yet handled." << endl;
         exit(1);
     }
@@ -191,9 +186,9 @@ int DynProf::waitForExit() {
 
 void DynProf::printCallCounts() {
     int count;
-    for(auto& func: func_map) {
+    for (auto& func : func_map) {
         func.second->getCount().readValue(&count);
-        if(count) {
+        if (count) {
             cerr << func.first->getName() << ":" << count << endl;
         }
     }

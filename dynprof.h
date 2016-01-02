@@ -29,17 +29,17 @@
 #define DEFAULT_ENTRY_POINT "main"
 
 class FuncInfo {
-    public:
-        FuncInfo(BPatch_variableExpr* _count) : children(), count(_count) {}
-        FuncInfo(const FuncInfo&) = delete;
-        FuncInfo& operator=(const FuncInfo&) = delete;
-        void addChild(BPatch_function*);
-        BPatch_variableExpr getCount();
-    private:
+   public:
+    FuncInfo(BPatch_variableExpr* _count) : children(), count(_count) {}
+    FuncInfo(const FuncInfo&) = delete;
+    FuncInfo& operator=(const FuncInfo&) = delete;
+    void addChild(BPatch_function*);
+    BPatch_variableExpr getCount();
+
+   private:
     vector<BPatch_function*> children;
     BPatch_variableExpr* count;
 };
-
 
 class DynProf {
    public:
