@@ -38,6 +38,7 @@ class FuncInfo {
 
    private:
     vector<BPatch_function*> children;
+    // FIXME: do const stuff
     BPatch_variableExpr* count;
 };
 

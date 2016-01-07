@@ -7,6 +7,8 @@ CFLAGS = -Wall -Wextra -Winvalid-pch -Wpedantic
 CFLAGS += -ggdb3
 #CFLAGS += -O2
 #CFLAGS += -fsanitize=address
+#CFLAGS += -fsanitize=thread
+
 
 CXXFLAGS = $(CFLAGS) -std=c++11 -Weffc++
 LDFLAGS = -L/usr/local/lib -ldyninstAPI
@@ -34,4 +36,4 @@ tidy:
 test: all
 	./dynprof example/test
 
-.PHONY: all format analyze test
+.PHONY: all format analyze tidy test
