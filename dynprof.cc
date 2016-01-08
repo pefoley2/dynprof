@@ -59,8 +59,6 @@ const char** get_params(vector<string> args) {
 
 void FuncInfo::addChild(BPatch_function* func) { children.push_back(func); }
 
-BPatch_variableExpr FuncInfo::getCount() { return *count; }
-
 void DynProf::recordFunc(BPatch_function* func) {
     BPatch_variableExpr* count = app->malloc(*app->getImage()->findType("int"));
     func_map.insert(make_pair(func, new FuncInfo(count)));
@@ -141,8 +139,8 @@ void DynProf::createSnippets(BPatch_function* func) {
     // TODO(peter): keep track of the time...
 
     BPatch_arithExpr incCount(
-        BPatch_assign, func_map[func]->getCount(),
-        BPatch_arithExpr(BPatch_plus, func_map[func]->getCount(), BPatch_constExpr(1)));
+        BPatch_assign, *func_map[func]->count,
+        BPatch_arithExpr(BPatch_plus, *func_map[func]->count, BPatch_constExpr(1)));
 
     BPatch_funcCallExpr entry_snippet(*printf_funcs.at(0), entry_args);
     BPatch_funcCallExpr exit_snippet(*printf_funcs.at(0), exit_args);
@@ -188,7 +186,7 @@ int DynProf::waitForExit() {
 void DynProf::printCallCounts() {
     int count;
     for (auto& func : func_map) {
-        func.second->getCount().readValue(&count);
+        func.second->count->readValue(&count);
         if (count) {
             cerr << count << ":" << func.first->getName() << endl;
         }

@@ -34,16 +34,14 @@ void ExitCallback(BPatch_thread* proc, BPatch_exitType exit_type);
 
 class FuncInfo {
    public:
-    FuncInfo(BPatch_variableExpr* _count) : children(), count(_count) {}
+    FuncInfo(BPatch_variableExpr* _count) : count(_count), children() {}
     FuncInfo(const FuncInfo&) = delete;
     FuncInfo& operator=(const FuncInfo&) = delete;
     void addChild(BPatch_function*);
-    BPatch_variableExpr getCount();
+    BPatch_variableExpr* const count;
 
    private:
     vector<BPatch_function*> children;
-    // FIXME: do const stuff
-    BPatch_variableExpr* count;
 };
 
 class DynProf {
