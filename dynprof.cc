@@ -61,7 +61,8 @@ void FuncInfo::addChild(BPatch_function* func) { children.push_back(func); }
 
 void DynProf::recordFunc(BPatch_function* func) {
     BPatch_variableExpr* count = app->malloc(*app->getImage()->findType("int"));
-    func_map.insert(make_pair(func, new FuncInfo(count)));
+    BPatch_variableExpr* elapsed_time = app->malloc(*elapsed);
+    func_map.insert(make_pair(func, new FuncInfo(count, elapsed_time)));
 }
 
 void DynProf::enum_subroutines(BPatch_function* func) {
@@ -136,7 +137,10 @@ void DynProf::createSnippets(BPatch_function* func) {
     }
     vector<BPatch_function*> clock_funcs;
     app->getImage()->findFunction("clock_gettime", clock_funcs);
-    // TODO(peter): keep track of the time...
+    if (clock_funcs.size() != 1) {
+        cerr << "Could not find clock_gettime" << endl;
+        return;
+    }
 
     BPatch_arithExpr incCount(
         BPatch_assign, *func_map[func]->count,
@@ -157,6 +161,16 @@ void DynProf::createSnippets(BPatch_function* func) {
     }
 }
 
+void DynProf::create_structs() {
+    vector<char*> field_names{(char*)"tv_sec", (char*)"tv_nsec"};
+    vector<BPatch_type*> field_types{app->getImage()->findType("long"),app->getImage()->findType("long")};
+    elapsed = bpatch.createStruct("timespec", field_names, field_types);
+    if(!elapsed) {
+        cerr << "Failed to create struct." << endl;
+        exit(1);
+    }
+}
+
 void DynProf::start() {
     cerr << "Preparing to profile " << path << endl;
     app = bpatch.processCreate(path.c_str(), params);
@@ -170,6 +184,7 @@ void DynProf::start() {
         cerr << "Multithreading is not yet handled." << endl;
         exit(1);
     }
+    create_structs();
     cerr << "Process loaded; Enumerating functions" << endl;
     hook_functions();
     cerr << "Resuming execution" << endl;

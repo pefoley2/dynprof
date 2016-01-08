@@ -34,11 +34,12 @@ void ExitCallback(BPatch_thread* proc, BPatch_exitType exit_type);
 
 class FuncInfo {
    public:
-    FuncInfo(BPatch_variableExpr* _count) : count(_count), children() {}
+    FuncInfo(BPatch_variableExpr* _count, BPatch_variableExpr* _elapsed) : count(_count), elapsed(_elapsed), children() {}
     FuncInfo(const FuncInfo&) = delete;
     FuncInfo& operator=(const FuncInfo&) = delete;
     void addChild(BPatch_function*);
     BPatch_variableExpr* const count;
+    BPatch_variableExpr* const elapsed;
 
    private:
     vector<BPatch_function*> children;
@@ -49,7 +50,8 @@ class DynProf {
     DynProf(string _path, const char** _params)
         : path(_path),
           params(_params),
-          app(),
+          app(nullptr),
+          elapsed(nullptr),
           bpatch(),
           func_map(),
           exit_callback(bpatch.registerExitCallback(ExitCallback)) {}
@@ -63,11 +65,13 @@ class DynProf {
     string path;
     const char** params;
     BPatch_process* app;
+    BPatch_type* elapsed;
     BPatch bpatch;
     unordered_map<BPatch_function*, FuncInfo*> func_map;
     BPatchExitCallback exit_callback;
     unique_ptr<vector<BPatch_function*>> get_entry_point();
     void hook_functions();
+    void create_structs();
     void enum_subroutines(BPatch_function* func);
     void createSnippets(BPatch_function* func);
     void recordFunc(BPatch_function* func);
