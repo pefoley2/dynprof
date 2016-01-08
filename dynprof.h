@@ -28,6 +28,10 @@
 
 #define DEFAULT_ENTRY_POINT "main"
 
+const char** get_params(vector<string> args);
+unique_ptr<string> get_path(string exe);
+void ExitCallback(BPatch_thread* proc, BPatch_exitType exit_type);
+
 class FuncInfo {
    public:
     FuncInfo(BPatch_variableExpr* _count) : children(), count(_count) {}
@@ -45,7 +49,12 @@ class FuncInfo {
 class DynProf {
    public:
     DynProf(string _path, const char** _params)
-        : path(_path), params(_params), app(), bpatch(), func_map() {}
+        : path(_path),
+          params(_params),
+          app(),
+          bpatch(),
+          func_map(),
+          exit_callback(bpatch.registerExitCallback(ExitCallback)) {}
     DynProf(const DynProf&) = delete;
     DynProf& operator=(const DynProf&) = delete;
     void start();
@@ -58,12 +67,10 @@ class DynProf {
     BPatch_process* app;
     BPatch bpatch;
     unordered_map<BPatch_function*, FuncInfo*> func_map;
+    BPatchExitCallback exit_callback;
     unique_ptr<vector<BPatch_function*>> get_entry_point();
     void hook_functions();
     void enum_subroutines(BPatch_function* func);
     void createSnippets(BPatch_function* func);
     void recordFunc(BPatch_function* func);
 };
-
-const char** get_params(vector<string> args);
-unique_ptr<string> get_path(string exe);

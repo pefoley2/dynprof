@@ -195,6 +195,16 @@ void DynProf::printCallCounts() {
     }
 }
 
+// FIXME: is there a way to do this without global variables?
+DynProf* prof;
+
+void ExitCallback(BPatch_thread*, BPatch_exitType exit_type) {
+    if (exit_type != ExitedNormally) {
+        return;
+    }
+    prof->printCallCounts();
+}
+
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         cerr << "Usage: ./dyninst [program] arg1,arg2,arg3..." << endl;
@@ -210,10 +220,9 @@ int main(int argc, char* argv[]) {
     const char** params = get_params(args);
     // set argv[0] to the original path.
     params[0] = path->c_str();
-    DynProf prof(*path, params);
-    prof.start();
-    int status = prof.waitForExit();
-    prof.printCallCounts();
+    prof = new DynProf(*path, params);
+    prof->start();
+    int status = prof->waitForExit();
     cerr << "Program exited with status: " << status << endl;
     return status;
 }
