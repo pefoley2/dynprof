@@ -34,7 +34,8 @@ void ExitCallback(BPatch_thread* proc, BPatch_exitType exit_type);
 
 class FuncInfo {
    public:
-    FuncInfo(BPatch_variableExpr* _count, BPatch_variableExpr* _elapsed) : count(_count), elapsed(_elapsed), children() {}
+    FuncInfo(BPatch_variableExpr* _count, BPatch_variableExpr* _elapsed)
+        : count(_count), elapsed(_elapsed), children() {}
     FuncInfo(const FuncInfo&) = delete;
     FuncInfo& operator=(const FuncInfo&) = delete;
     void addChild(BPatch_function*);

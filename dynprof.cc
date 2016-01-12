@@ -141,6 +141,7 @@ void DynProf::createSnippets(BPatch_function* func) {
         cerr << "Could not find clock_gettime" << endl;
         return;
     }
+    // BPatch_funcCallExpr clock_record;
 
     BPatch_arithExpr incCount(
         BPatch_assign, *func_map[func]->count,
@@ -162,10 +163,11 @@ void DynProf::createSnippets(BPatch_function* func) {
 }
 
 void DynProf::create_structs() {
-    vector<char*> field_names{(char*)"tv_sec", (char*)"tv_nsec"};
-    vector<BPatch_type*> field_types{app->getImage()->findType("long"),app->getImage()->findType("long")};
+    vector<char*> field_names{const_cast<char*>("tv_sec"), const_cast<char*>("tv_nsec")};
+    vector<BPatch_type*> field_types{app->getImage()->findType("long"),
+                                     app->getImage()->findType("long")};
     elapsed = bpatch.createStruct("timespec", field_names, field_types);
-    if(!elapsed) {
+    if (!elapsed) {
         cerr << "Failed to create struct." << endl;
         exit(1);
     }
@@ -209,7 +211,7 @@ void DynProf::printCallCounts() {
 }
 
 // FIXME: is there a way to do this without global variables?
-DynProf* prof;
+static DynProf* prof;
 
 void ExitCallback(BPatch_thread*, BPatch_exitType exit_type) {
     if (exit_type != ExitedNormally) {
