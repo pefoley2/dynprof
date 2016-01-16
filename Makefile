@@ -34,6 +34,17 @@ analyze:
 tidy:
 	clang-tidy -checks='*' -p work dynprof.cc
 
+cppcheck:
+	cppcheck -I/usr/lib/gcc/x86_64-pc-linux-gnu/5.3.0/include/g++-v5 \
+	-I/usr/lib/gcc/x86_64-pc-linux-gnu/5.3.0/include/g++-v5/x86_64-pc-linux-gnu \
+	-I/usr/lib/gcc/x86_64-pc-linux-gnu/5.3.0/include/g++-v5/backward \
+	-I/usr/lib/gcc/x86_64-pc-linux-gnu/5.3.0/include \
+	-I/usr/local/include \
+	-I/usr/lib/gcc/x86_64-pc-linux-gnu/5.3.0/include-fixed \
+	-I/usr/include \
+	--enable=all --max-configs=1 --platform=unix64 --inconclusive .
+
+
 test: all
 	./dynprof example/test
 
