@@ -4,7 +4,9 @@ CXX = g++
 CFLAGS = -Wall -Wextra -Winvalid-pch -Wpedantic
 #CFLAGS += -Weverything -Wno-c++98-compat
 CFLAGS += -ggdb3
-#CFLAGS += -O2 -flto -fuse-linker-plugin
+#CFLAGS += -O2
+#CFLAGS += -flto -fuse-linker-plugin
+#CFLAGS += -floop-interchange -floop-strip-mine -floop-block -fgraphite-identity
 #CFLAGS += -fsanitize=address
 #CFLAGS += -fsanitize=thread
 
