@@ -51,8 +51,8 @@ class FuncInfo {
 
 class DynProf {
    public:
-    DynProf(string _path, const char** _params)
-        : path(_path),
+    DynProf(unique_ptr<string> _path, const char** _params)
+        : path(std::move(_path)),
           params(_params),
           app(nullptr),
           elapsed(nullptr),
@@ -66,7 +66,7 @@ class DynProf {
     void printCallCounts();
 
    private:
-    string path;
+    unique_ptr<string> path;
     const char** params;
     BPatch_process* app;
     BPatch_type* elapsed;

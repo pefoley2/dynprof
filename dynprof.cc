@@ -174,10 +174,10 @@ void DynProf::create_structs() {
 }
 
 void DynProf::start() {
-    cerr << "Preparing to profile " << path << endl;
-    app = bpatch.processCreate(path.c_str(), params);
+    cerr << "Preparing to profile " << *path << endl;
+    app = bpatch.processCreate(path->c_str(), params);
     if (!app) {
-        cerr << "Failed to load " << path << endl;
+        cerr << "Failed to load " << *path << endl;
         exit(1);
     }
     if (app->isMultithreadCapable()) {
@@ -235,7 +235,7 @@ int main(int argc, char* argv[]) {
     const char** params = get_params(args);
     // set argv[0] to the original path.
     params[0] = path->c_str();
-    prof = new DynProf(*path, params);
+    prof = new DynProf(std::move(path), params);
     prof->start();
     int status = prof->waitForExit();
     cerr << "Program exited with status: " << status << endl;

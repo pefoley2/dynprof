@@ -1,5 +1,5 @@
 CXX = g++
-#CXX = clang++
+#CXX = clang++ -stdlib=libc++
 
 CFLAGS = -fno-exceptions
 CFLAGS += -Wall -Wextra -Winvalid-pch -Wpedantic -Wno-c++98-compat
