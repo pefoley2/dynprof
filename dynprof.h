@@ -17,6 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#ifndef __DYNPROF_H
+#define __DYNPROF_H
+
 // PCH
 #include "dyninst.h"
 
@@ -38,7 +41,7 @@ class FuncInfo {
         : count(_count), elapsed(_elapsed), children() {}
     FuncInfo(const FuncInfo&) = delete;
     FuncInfo& operator=(const FuncInfo&) = delete;
-    void addChild(BPatch_function*);
+    void addChild(BPatch_function* func);
     BPatch_variableExpr* const count;
     BPatch_variableExpr* const elapsed;
 
@@ -77,3 +80,5 @@ class DynProf {
     void createSnippets(BPatch_function* func);
     void recordFunc(BPatch_function* func);
 };
+
+#endif

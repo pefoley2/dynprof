@@ -1,8 +1,9 @@
 CXX = g++
 #CXX = clang++
 
-CFLAGS = -Wall -Wextra -Winvalid-pch -Wpedantic
-#CFLAGS += -Weverything -Wno-c++98-compat
+CFLAGS = -fno-exceptions
+CFLAGS += -Wall -Wextra -Winvalid-pch -Wpedantic -Wno-c++98-compat
+#CFLAGS += -Weverything
 CFLAGS += -ggdb3
 #CFLAGS += -O2
 #CFLAGS += -flto -fuse-linker-plugin
@@ -32,7 +33,8 @@ analyze:
 	clang++ --analyze --std=c++11 -o /dev/null dynprof.cc
 
 tidy:
-	clang-tidy -checks='*' -p work dynprof.cc
+	make -C work
+	clang-tidy -analyze-temporary-dtors -header-filter='.*' -checks='*,-llvm-header-guard' -p work dynprof.cc
 
 cppcheck:
 	cppcheck -I/usr/lib/gcc/x86_64-pc-linux-gnu/5.3.0/include/g++-v5 \

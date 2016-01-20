@@ -213,7 +213,7 @@ void DynProf::printCallCounts() {
 // FIXME: is there a way to do this without global variables?
 static DynProf* prof;
 
-void ExitCallback(BPatch_thread*, BPatch_exitType exit_type) {
+void ExitCallback(BPatch_thread* /*unused*/, BPatch_exitType exit_type) {
     if (exit_type != ExitedNormally) {
         return;
     }
