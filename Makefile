@@ -1,9 +1,9 @@
-CXX = g++
-#CXX = clang++ -stdlib=libc++
+#CXX = g++
+CXX = clang++
 
-CFLAGS = -fno-exceptions
-CFLAGS += -Wall -Wextra -Winvalid-pch -Wpedantic -Wno-c++98-compat
-#CFLAGS += -Weverything
+CFLAGS = -fno-exceptions -std=c++11
+CFLAGS += -Wall -Wextra -Winvalid-pch -Wpedantic -Wno-c++98-compat -Weffc++
+CFLAGS += -Weverything
 CFLAGS += -ggdb3
 #CFLAGS += -O2
 #CFLAGS += -flto -fuse-linker-plugin
@@ -12,22 +12,21 @@ CFLAGS += -ggdb3
 #CFLAGS += -fsanitize=thread
 
 
-CXXFLAGS = $(CFLAGS) -std=c++11 -Weffc++
 LDFLAGS = -L/usr/local/lib -ldyninstAPI
 
 all: dynprof example/test
 
-example/test: example/test.c
-	$(CXX) $(CFLAGS) -o $@ $<
+example/test: example/test.cc
+	$(CXX) $(CFLAGS) -fno-sanitize=all -o $@ $<
 
 %.h.gch: %.h
-	$(CXX) -x c++-header $(CXXFLAGS) -o $@ $<
+	$(CXX) -x c++-header $(CFLAGS) -o $@ $<
 
 dynprof: dynprof.cc dynprof.h dyninst.h.gch
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -include dyninst.h -o $@ $<
+	$(CXX) $(CFLAGS) $(LDFLAGS) -include dyninst.h -o $@ $<
 
 format:
-	clang-format -i -style="{BasedOnStyle: google, IndentWidth: 4, ColumnLimit: 100}" *.cc *.h example/*.c
+	clang-format -i -style="{BasedOnStyle: google, IndentWidth: 4, ColumnLimit: 100}" *.cc *.h example/*.cc
 
 analyze:
 	clang++ --analyze --std=c++11 -o /dev/null dynprof.cc

@@ -1,5 +1,5 @@
-#ifndef __DYNINST_H
-#define __DYNINST_H
+#ifndef DYNINST_H
+#define DYNINST_H
 
 #include <BPatch.h>
 #include <BPatch_function.h>
