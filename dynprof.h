@@ -27,6 +27,7 @@
 #error "Please use Dyninst 9.0 or newer"
 #endif
 
+#include <chrono>
 #include <unordered_map>
 
 #define DEFAULT_ENTRY_POINT "main"
@@ -37,13 +38,15 @@ void ExitCallback(BPatch_thread* proc, BPatch_exitType exit_type);
 
 class FuncInfo {
    public:
-    FuncInfo(BPatch_variableExpr* _count, BPatch_variableExpr* _elapsed)
-        : count(_count), elapsed(_elapsed), children() {}
+    FuncInfo(BPatch_variableExpr* _count, BPatch_variableExpr* _before, BPatch_variableExpr* _after)
+        : count(_count), before(_before), after(_after), children() {}
     FuncInfo(const FuncInfo&) = delete;
     FuncInfo& operator=(const FuncInfo&) = delete;
     void addChild(BPatch_function* func);
     BPatch_variableExpr* const count;
-    BPatch_variableExpr* const elapsed;
+    BPatch_variableExpr* const before;
+    BPatch_variableExpr* const after;
+    chrono::nanoseconds elapsed;
 
    private:
     vector<BPatch_function*> children;
@@ -55,7 +58,8 @@ class DynProf {
         : path(std::move(_path)),
           params(_params),
           app(nullptr),
-          elapsed(nullptr),
+          timespec_struct(nullptr),
+          clock_func(nullptr),
           bpatch(),
           func_map(),
           exit_callback(bpatch.registerExitCallback(ExitCallback)) {}
@@ -69,14 +73,18 @@ class DynProf {
     unique_ptr<string> path;
     const char** params;
     BPatch_process* app;
-    BPatch_type* elapsed;
+    BPatch_type* timespec_struct;
+    BPatch_function* clock_func;
     BPatch bpatch;
     unordered_map<BPatch_function*, FuncInfo*> func_map;
     BPatchExitCallback exit_callback;
     unique_ptr<vector<BPatch_function*>> get_entry_point();
     void hook_functions();
     void create_structs();
+    void find_funcs();
     void enum_subroutines(BPatch_function* func);
+    unique_ptr<BPatch_sequence> createBeforeSnippet(BPatch_function* func);
+    unique_ptr<BPatch_sequence> createAfterSnippet(BPatch_function* func);
     void createSnippets(BPatch_function* func);
     void recordFunc(BPatch_function* func);
 };

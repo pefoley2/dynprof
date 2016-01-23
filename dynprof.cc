@@ -61,8 +61,9 @@ void FuncInfo::addChild(BPatch_function* func) { children.push_back(func); }
 
 void DynProf::recordFunc(BPatch_function* func) {
     BPatch_variableExpr* count = app->malloc(*app->getImage()->findType("int"));
-    BPatch_variableExpr* elapsed_time = app->malloc(*elapsed);
-    func_map.insert(make_pair(func, new FuncInfo(count, elapsed_time)));
+    BPatch_variableExpr* before = app->malloc(*timespec_struct);
+    BPatch_variableExpr* after = app->malloc(*timespec_struct);
+    func_map.insert(make_pair(func, new FuncInfo(count, before, after)));
 }
 
 void DynProf::enum_subroutines(BPatch_function* func) {
@@ -108,7 +109,67 @@ void DynProf::hook_functions() {
     }
 }
 
+unique_ptr<BPatch_sequence> DynProf::createBeforeSnippet(BPatch_function* func) {
+    vector<BPatch_snippet*> entry_args;
+    entry_args.push_back(new BPatch_constExpr("Entering %s\n"));
+    entry_args.push_back(new BPatch_constExpr(func->getName().c_str()));
+
+    BPatch_arithExpr incCount(
+        BPatch_assign, *func_map[func]->count,
+        BPatch_arithExpr(BPatch_plus, *func_map[func]->count, BPatch_constExpr(1)));
+
+    // TODO(peter): remove this for final product.
+    vector<BPatch_function*> printf_funcs;
+    // printf isn't profilable.
+    app->getImage()->findFunction("printf", printf_funcs, true, true, true);
+    if (printf_funcs.size() != 1) {
+        cerr << "Could not find printf" << endl;
+        return nullptr;
+    }
+
+    BPatch_funcCallExpr entry_snippet(*printf_funcs.at(0), entry_args);
+
+    vector<BPatch_snippet*> clock_args;
+    clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
+    clock_args.push_back(func_map[func]->before);
+    BPatch_funcCallExpr before_record(*clock_func, clock_args);
+
+    vector<BPatch_snippet*> entry_vec{&incCount, &entry_snippet, &before_record};
+    return unique_ptr<BPatch_sequence>(new BPatch_sequence(entry_vec));
+}
+
+unique_ptr<BPatch_sequence> DynProf::createAfterSnippet(BPatch_function* func) {
+    vector<BPatch_snippet*> exit_args;
+    exit_args.push_back(new BPatch_constExpr("Exiting %s\n"));
+    exit_args.push_back(new BPatch_constExpr(func->getName().c_str()));
+
+    // TODO(peter): remove this for final product.
+    vector<BPatch_function*> printf_funcs;
+    // printf isn't profilable.
+    app->getImage()->findFunction("printf", printf_funcs, true, true, true);
+    if (printf_funcs.size() != 1) {
+        cerr << "Could not find printf" << endl;
+        return nullptr;
+    }
+
+    BPatch_funcCallExpr exit_snippet(*printf_funcs.at(0), exit_args);
+
+    vector<BPatch_snippet*> clock_args;
+    clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
+    clock_args.push_back(func_map[func]->after);
+    BPatch_funcCallExpr after_record(*clock_func, clock_args);
+
+    vector<BPatch_snippet*> exit_vec{&after_record, &exit_snippet};
+    return unique_ptr<BPatch_sequence>(new BPatch_sequence(exit_vec));
+}
+
 void DynProf::createSnippets(BPatch_function* func) {
+    unique_ptr<BPatch_sequence> entry_seq = createBeforeSnippet(func);
+    unique_ptr<BPatch_sequence> exit_seq = createAfterSnippet(func);
+    if (!entry_seq || !exit_seq) {
+        return;
+    }
+
     unique_ptr<vector<BPatch_point*>> entry_point(func->findPoint(BPatch_entry));
     if (!entry_point || entry_point->size() == 0) {
         cerr << "Could not find entry point for " << func->getName() << endl;
@@ -121,56 +182,35 @@ void DynProf::createSnippets(BPatch_function* func) {
         return;
     }
 
-    vector<BPatch_snippet*> entry_args;
-    entry_args.push_back(new BPatch_constExpr("Entering %s\n"));
-    entry_args.push_back(new BPatch_constExpr(func->getName().c_str()));
-    vector<BPatch_snippet*> exit_args;
-    exit_args.push_back(new BPatch_constExpr("Exiting %s\n"));
-    exit_args.push_back(new BPatch_constExpr(func->getName().c_str()));
+    app->beginInsertionSet();
+    app->insertSnippet(*entry_seq, *entry_point->at(0), BPatch_callBefore);
+    app->insertSnippet(*exit_seq, *exit_point->at(0), BPatch_callAfter);
 
-    vector<BPatch_function*> printf_funcs;
-    // printf isn't profilable.
-    app->getImage()->findFunction("printf", printf_funcs, true, true, true);
-    if (printf_funcs.size() != 1) {
-        cerr << "Could not find printf" << endl;
-        return;
+    if (!app->finalizeInsertionSet(true)) {
+        cerr << "Failed to insert snippets around " << func->getName() << endl;
     }
+}
+
+void DynProf::create_structs() {
+    vector<char*> field_names{const_cast<char*>("tv_sec"), const_cast<char*>("tv_nsec")};
+    vector<BPatch_type*> field_types{
+        app->getImage()->findType("long"),  // time_t is ultimately a typedef to long
+        app->getImage()->findType("long")};
+    timespec_struct = bpatch.createStruct("timespec", field_names, field_types);
+    if (!timespec_struct) {
+        cerr << "Failed to create struct." << endl;
+        exit(1);
+    }
+}
+
+void DynProf::find_funcs() {
     vector<BPatch_function*> clock_funcs;
     app->getImage()->findFunction("clock_gettime", clock_funcs);
     if (clock_funcs.size() != 1) {
         cerr << "Could not find clock_gettime" << endl;
         return;
     }
-    // BPatch_funcCallExpr clock_record;
-
-    BPatch_arithExpr incCount(
-        BPatch_assign, *func_map[func]->count,
-        BPatch_arithExpr(BPatch_plus, *func_map[func]->count, BPatch_constExpr(1)));
-
-    BPatch_funcCallExpr entry_snippet(*printf_funcs.at(0), entry_args);
-    BPatch_funcCallExpr exit_snippet(*printf_funcs.at(0), exit_args);
-
-    vector<BPatch_snippet*> entry_vec{&incCount, &entry_snippet};
-    BPatch_sequence entry_seq(entry_vec);
-
-    app->beginInsertionSet();
-    app->insertSnippet(entry_seq, *entry_point->at(0), BPatch_callBefore);
-    app->insertSnippet(exit_snippet, *exit_point->at(0), BPatch_callAfter);
-    if (!app->finalizeInsertionSet(true)) {
-        cerr << "Failed to insert snippets around " << func->getName() << endl;
-        return;
-    }
-}
-
-void DynProf::create_structs() {
-    vector<char*> field_names{const_cast<char*>("tv_sec"), const_cast<char*>("tv_nsec")};
-    vector<BPatch_type*> field_types{app->getImage()->findType("long"),
-                                     app->getImage()->findType("long")};
-    elapsed = bpatch.createStruct("timespec", field_names, field_types);
-    if (!elapsed) {
-        cerr << "Failed to create struct." << endl;
-        exit(1);
-    }
+    clock_func = clock_funcs.at(0);
 }
 
 void DynProf::start() {
@@ -187,6 +227,7 @@ void DynProf::start() {
         exit(1);
     }
     create_structs();
+    find_funcs();
     cerr << "Process loaded; Enumerating functions" << endl;
     hook_functions();
     cerr << "Resuming execution" << endl;
