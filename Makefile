@@ -1,7 +1,7 @@
 #CXX = g++
 CXX = clang++
 
-CFLAGS = -fno-exceptions -std=c++11
+CFLAGS = -fno-exceptions -std=c++14
 CFLAGS += -Wall -Wextra -Winvalid-pch -Wpedantic -Wno-c++98-compat -Weffc++
 CFLAGS += -Weverything
 CFLAGS += -ggdb3
@@ -29,7 +29,7 @@ format:
 	clang-format -i -style="{BasedOnStyle: google, IndentWidth: 4, ColumnLimit: 100}" *.cc *.h example/*.cc
 
 analyze:
-	clang++ --analyze --std=c++11 -o /dev/null dynprof.cc
+	clang++ --analyze $(CFLAGS) -o /dev/null dynprof.cc
 
 tidy:
 	make -C work
