@@ -109,7 +109,13 @@ void DynProf::hook_functions() {
     }
 }
 
-unique_ptr<BPatch_sequence> DynProf::createBeforeSnippet(BPatch_function* func) {
+bool DynProf::createBeforeSnippet(BPatch_function* func) {
+    unique_ptr<vector<BPatch_point*>> entry_point(func->findPoint(BPatch_entry));
+    if (!entry_point || entry_point->size() != 1) {
+        cerr << "Could not find entry point for " << func->getName() << endl;
+        return false;
+    }
+
     vector<BPatch_snippet*> entry_args;
     entry_args.push_back(new BPatch_constExpr("Entering %s\n"));
     entry_args.push_back(new BPatch_constExpr(func->getName().c_str()));
@@ -124,7 +130,7 @@ unique_ptr<BPatch_sequence> DynProf::createBeforeSnippet(BPatch_function* func) 
     app->getImage()->findFunction("printf", printf_funcs, true, true, true);
     if (printf_funcs.size() != 1) {
         cerr << "Could not find printf" << endl;
-        return nullptr;
+        return false;
     }
 
     BPatch_funcCallExpr entry_snippet(*printf_funcs.at(0), entry_args);
@@ -134,11 +140,21 @@ unique_ptr<BPatch_sequence> DynProf::createBeforeSnippet(BPatch_function* func) 
     clock_args.push_back(func_map[func]->before);
     BPatch_funcCallExpr before_record(*clock_func, clock_args);
 
-    vector<BPatch_snippet*> entry_vec{&incCount, &entry_snippet, &before_record};
-    return unique_ptr<BPatch_sequence>(new BPatch_sequence(entry_vec));
+    vector<BPatch_snippet*> entry_vec{&incCount, &entry_snippet};
+    BPatch_sequence entry_seq(entry_vec);
+    app->insertSnippet(entry_seq, *entry_point->at(0), BPatch_callBefore);
+    // FIXME: why does this break when added to the same seq as the other snippets?
+    app->insertSnippet(before_record, *entry_point->at(0), BPatch_callBefore);
+    return true;
 }
 
-unique_ptr<BPatch_sequence> DynProf::createAfterSnippet(BPatch_function* func) {
+bool DynProf::createAfterSnippet(BPatch_function* func) {
+    unique_ptr<vector<BPatch_point*>> exit_point(func->findPoint(BPatch_exit));
+    if (!exit_point || exit_point->size() != 1) {
+        cerr << "Could not find exit point for " << func->getName() << endl;
+        return false;
+    }
+
     vector<BPatch_snippet*> exit_args;
     exit_args.push_back(new BPatch_constExpr("Exiting %s\n"));
     exit_args.push_back(new BPatch_constExpr(func->getName().c_str()));
@@ -149,7 +165,7 @@ unique_ptr<BPatch_sequence> DynProf::createAfterSnippet(BPatch_function* func) {
     app->getImage()->findFunction("printf", printf_funcs, true, true, true);
     if (printf_funcs.size() != 1) {
         cerr << "Could not find printf" << endl;
-        return nullptr;
+        return false;
     }
 
     BPatch_funcCallExpr exit_snippet(*printf_funcs.at(0), exit_args);
@@ -159,32 +175,18 @@ unique_ptr<BPatch_sequence> DynProf::createAfterSnippet(BPatch_function* func) {
     clock_args.push_back(func_map[func]->after);
     BPatch_funcCallExpr after_record(*clock_func, clock_args);
 
-    vector<BPatch_snippet*> exit_vec{&after_record, &exit_snippet};
-    return unique_ptr<BPatch_sequence>(new BPatch_sequence(exit_vec));
+    app->insertSnippet(exit_snippet, *exit_point->at(0), BPatch_callAfter);
+    // FIXME: why does this break when added to a seq with other snippets?
+    app->insertSnippet(after_record, *exit_point->at(0), BPatch_callAfter);
+    return true;
 }
 
 void DynProf::createSnippets(BPatch_function* func) {
-    unique_ptr<BPatch_sequence> entry_seq = createBeforeSnippet(func);
-    unique_ptr<BPatch_sequence> exit_seq = createAfterSnippet(func);
-    if (!entry_seq || !exit_seq) {
-        return;
-    }
-
-    unique_ptr<vector<BPatch_point*>> entry_point(func->findPoint(BPatch_entry));
-    if (!entry_point || entry_point->size() == 0) {
-        cerr << "Could not find entry point for " << func->getName() << endl;
-        return;
-    }
-
-    unique_ptr<vector<BPatch_point*>> exit_point(func->findPoint(BPatch_exit));
-    if (!exit_point || exit_point->size() == 0) {
-        cerr << "Could not find exit point for " << func->getName() << endl;
-        return;
-    }
-
     app->beginInsertionSet();
-    app->insertSnippet(*entry_seq, *entry_point->at(0), BPatch_callBefore);
-    app->insertSnippet(*exit_seq, *exit_point->at(0), BPatch_callAfter);
+
+    if (!createBeforeSnippet(func) || !createAfterSnippet(func)) {
+        return;
+    }
 
     if (!app->finalizeInsertionSet(true)) {
         cerr << "Failed to insert snippets around " << func->getName() << endl;

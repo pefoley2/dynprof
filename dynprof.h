@@ -83,8 +83,8 @@ class DynProf {
     void create_structs();
     void find_funcs();
     void enum_subroutines(BPatch_function* func);
-    unique_ptr<BPatch_sequence> createBeforeSnippet(BPatch_function* func);
-    unique_ptr<BPatch_sequence> createAfterSnippet(BPatch_function* func);
+    bool createBeforeSnippet(BPatch_function* func);
+    bool createAfterSnippet(BPatch_function* func);
     void createSnippets(BPatch_function* func);
     void recordFunc(BPatch_function* func);
 };
