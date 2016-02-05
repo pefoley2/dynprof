@@ -63,18 +63,24 @@ class DynProf {
           clock_func(nullptr),
           bpatch(),
           func_map(),
-          exit_callback(bpatch.registerExitCallback(ExitCallback)) {}
+          exit_callback(bpatch.registerExitCallback(ExitCallback)) {
+        size_t offset = path->rfind("/");
+        executable = path->substr(offset + 1);
+    }
     DynProf(const DynProf&) = delete;
     DynProf& operator=(const DynProf&) = delete;
     void start();
+    void setupBinary();
     int waitForExit();
+    bool writeOutput();
     void printCallCounts();
     void printElapsedTime();
 
    private:
     unique_ptr<string> path;
     const char** params;
-    BPatch_process* app;
+    string executable;
+    BPatch_addressSpace* app;
     BPatch_type* timespec_struct;
     BPatch_function* clock_func;
     BPatch bpatch;
@@ -84,6 +90,7 @@ class DynProf {
     void hook_functions();
     void create_structs();
     void find_funcs();
+    void doSetup();
     void enum_subroutines(BPatch_function* func);
     bool createBeforeSnippet(BPatch_function* func);
     bool createAfterSnippet(BPatch_function* func);

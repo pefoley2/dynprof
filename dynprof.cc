@@ -220,29 +220,52 @@ void DynProf::find_funcs() {
 void DynProf::start() {
     cerr << "Preparing to profile " << *path << endl;
     app = bpatch.processCreate(path->c_str(), params);
-    if (!app) {
-        cerr << "Failed to load " << *path << endl;
-        exit(1);
-    }
-    if (app->isMultithreadCapable()) {
+    doSetup();
+    if (static_cast<BPatch_process*>(app)->isMultithreadCapable()) {
         // TODO(peter): handle entry points other than main().
         // app->getThreads()
         cerr << "Multithreading is not yet handled." << endl;
         exit(1);
     }
+    cerr << "Resuming execution" << endl;
+    static_cast<BPatch_process*>(app)->continueExecution();
+}
+
+void DynProf::setupBinary() {
+    cerr << "Preparing " << *path << " for profiling" << endl;
+    app = bpatch.openBinary(path->c_str(), true);
+    doSetup();
+}
+
+void DynProf::doSetup() {
+    if (!app) {
+        cerr << "Failed to load " << *path << endl;
+        exit(1);
+    }
     create_structs();
     find_funcs();
-    cerr << "Process loaded; Enumerating functions" << endl;
+    cerr << "Enumerating functions" << endl;
     hook_functions();
-    cerr << "Resuming execution" << endl;
-    app->continueExecution();
 }
 
 int DynProf::waitForExit() {
-    while (!app->isTerminated()) {
+    while (!static_cast<BPatch_process*>(app)->isTerminated()) {
         bpatch.waitForStatusChange();
     }
-    return app->getExitCode();
+    int status = static_cast<BPatch_process*>(app)->getExitCode();
+    cerr << "Program exited with status: " << status << endl;
+    return status;
+}
+
+bool DynProf::writeOutput() {
+    string out_file = executable + "_dynprof";
+    bool status = static_cast<BPatch_binaryEdit*>(app)->writeFile(out_file.c_str());
+    if (status) {
+        cerr << "Modified binary written to: " << out_file << endl;
+    } else {
+        cerr << "Failed to write modified binary to: " << out_file << endl;
+    }
+    return status;
 }
 
 void DynProf::printCallCounts() {
@@ -286,16 +309,20 @@ void ExitCallback(BPatch_thread* /*unused*/, BPatch_exitType exit_type) {
         return;
     }
     prof->printCallCounts();
-    // FIXME: make this work
-    // prof->printElapsedTime();
+    prof->printElapsedTime();
 }
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        cerr << "Usage: ./dyninst [program] arg1,arg2,arg3..." << endl;
+        cerr << "Usage: ./dynprof (--write) [program] arg1,arg2,arg3..." << endl;
         return 1;
     }
     vector<string> args(argv, argv + argc);
+    bool binary_edit = false;
+    if (args[1] == "--write") {
+        binary_edit = true;
+        args.erase(args.begin());
+    }
     unique_ptr<string> path = get_path(args[1]);
     if (!path) {
         cerr << args[1] << " not found in path" << endl;
@@ -306,8 +333,11 @@ int main(int argc, char* argv[]) {
     // set argv[0] to the original path.
     params[0] = path->c_str();
     prof = new DynProf(std::move(path), params);
+    if (binary_edit) {
+        prof->setupBinary();
+        return prof->writeOutput();
+    }
+
     prof->start();
-    int status = prof->waitForExit();
-    cerr << "Program exited with status: " << status << endl;
-    return status;
+    return prof->waitForExit();
 }

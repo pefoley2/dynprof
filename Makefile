@@ -50,5 +50,7 @@ cppcheck:
 
 test: all
 	./dynprof example/test
+binary: all
+	./dynprof --write example/test
 
 .PHONY: all format analyze tidy test
