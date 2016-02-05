@@ -11,6 +11,7 @@ CFLAGS += -ggdb3
 #CFLAGS += -fsanitize=address
 #CFLAGS += -fsanitize=thread
 #CFLAGS += -fsanitize=memory
+#CFLAGS += -fsanitize=undefined
 
 
 LDFLAGS = -L/usr/local/lib -ldyninstAPI

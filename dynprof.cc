@@ -20,20 +20,22 @@
 #include "dynprof.h"
 
 unique_ptr<string> get_path(string exe) {
-    // FIXME: make more idiomatically c++
-    // string.find_first_of() instead of strtok
-    char* path = getenv("PATH");
-    char* dir = strtok(path, ":");
+    unique_ptr<string> path(new string);
+    path->assign(getenv("PATH"));
     unique_ptr<string> fullpath(new string);
-    while (dir) {
-        fullpath->assign(dir);
+    size_t current = 0;
+    size_t offset;
+    do {
+        offset = path->find_first_of(":", current);
+        fullpath->assign(path->substr(current, offset - current));
         fullpath->append("/");
         fullpath->append(exe);
         if (access(fullpath->c_str(), F_OK) == 0) {
             return fullpath;
         }
-        dir = strtok(nullptr, ":");
-    }
+        current = offset + 1;
+    } while (offset != string::npos);
+
     char* resolved_path = realpath(exe.c_str(), nullptr);
     if (resolved_path) {
         fullpath->assign(resolved_path);
