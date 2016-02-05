@@ -253,6 +253,29 @@ void DynProf::printCallCounts() {
     }
 }
 
+double elapsed_time(struct timespec* before, struct timespec* after) {
+    chrono::nanoseconds before_c =
+        chrono::seconds(before->tv_sec) + chrono::nanoseconds(before->tv_nsec);
+    chrono::nanoseconds after_c =
+        chrono::seconds(after->tv_sec) + chrono::nanoseconds(after->tv_nsec);
+    chrono::nanoseconds elapsed = after_c - before_c;
+    return elapsed.count();
+}
+
+void DynProf::printElapsedTime() {
+    struct timespec* before = static_cast<struct timespec*>(malloc(sizeof(struct timespec)));
+    struct timespec* after = static_cast<struct timespec*>(malloc(sizeof(struct timespec)));
+    memset(before, 0, sizeof(struct timespec));
+    memset(after, 0, sizeof(struct timespec));
+    for (auto& func : func_map) {
+        func.second->before->readValue(before);
+        func.second->after->readValue(after);
+        cerr << fixed << elapsed_time(before, after) << ":" << func.first->getName() << endl;
+    }
+    free(before);
+    free(after);
+}
+
 // FIXME: is there a way to do this without global variables?
 static DynProf* prof;
 
@@ -261,6 +284,8 @@ void ExitCallback(BPatch_thread* /*unused*/, BPatch_exitType exit_type) {
         return;
     }
     prof->printCallCounts();
+    // FIXME: make this work
+    // prof->printElapsedTime();
 }
 
 int main(int argc, char* argv[]) {

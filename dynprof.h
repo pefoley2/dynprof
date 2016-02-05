@@ -35,6 +35,7 @@
 const char** get_params(vector<string> args);
 unique_ptr<string> get_path(string exe);
 void ExitCallback(BPatch_thread* proc, BPatch_exitType exit_type);
+double elapsed_time(struct timespec* before, struct timespec* after);
 
 class FuncInfo {
    public:
@@ -68,6 +69,7 @@ class DynProf {
     void start();
     int waitForExit();
     void printCallCounts();
+    void printElapsedTime();
 
    private:
     unique_ptr<string> path;

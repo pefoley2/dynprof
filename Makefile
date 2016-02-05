@@ -10,6 +10,7 @@ CFLAGS += -ggdb3
 #CFLAGS += -floop-interchange -floop-strip-mine -floop-block -fgraphite-identity
 #CFLAGS += -fsanitize=address
 #CFLAGS += -fsanitize=thread
+#CFLAGS += -fsanitize=memory
 
 
 LDFLAGS = -L/usr/local/lib -ldyninstAPI
