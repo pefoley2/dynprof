@@ -265,7 +265,7 @@ bool DynProf::writeOutput() {
     } else {
         cerr << "Failed to write modified binary to: " << out_file << endl;
     }
-    return status;
+    return !status;
 }
 
 void DynProf::printCallCounts() {
