@@ -6,10 +6,10 @@ compiler:
     - gcc
 env:
     - DYNINST=DyninstAPI-9.1.0
-#addons:
-#    apt:
-#        packages:
-#            - cmake
+addons:
+    apt:
+        packages:
+            - boost
 cache:
     directories:
         - $HOME/dyninst
