@@ -20,7 +20,7 @@ before_install:
     - test -d $HOME/dyninst/bin || wget -N http://www.paradyn.org/release9.1.0/$DYNINST.tgz
     - test -d $HOME/dyninst/bin || tar xf $DYNINST.tgz
 install:
-    - test -d $HOME/dyninst/bin || (mkdir -p $DYNINST/work && cd $DYNINST/work && cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/dyninst)
+    - test -d $HOME/dyninst/bin || (mkdir -p $DYNINST/work && cd $DYNINST/work && cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/dyninst -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++)
     - test -d $HOME/dyninst/bin || make -C $DYNINST/work install
 script:
     - make
