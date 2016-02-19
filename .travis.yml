@@ -8,6 +8,7 @@ compiler:
 env:
     - DYNINST=DyninstAPI-9.1.0
 cache:
+    apt: true
     directories:
         - $HOME/dyninst
 before_install:
@@ -19,4 +20,4 @@ install:
     - test -d $HOME/dyninst/include || (mkdir -p $DYNINST/work && cd $DYNINST/work && cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/dyninst -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DUSE_GNU_DEMANGLER=1)
     - test -d $HOME/dyninst/include || make -C $DYNINST/work install
 script:
-    - CFLAGS="-I$HOME/dyninst/include" make test
+    - CFLAGS="-Werror -isystem $HOME/dyninst/include -L$HOME/dyninst/lib" make test

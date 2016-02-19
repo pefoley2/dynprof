@@ -2,9 +2,9 @@
 CXX ?= clang++
 
 CFLAGS := $(strip $(CFLAGS) -fno-exceptions -std=c++11)
-CFLAGS += -Wall -Wextra -Winvalid-pch -Wpedantic -Wno-c++98-compat -Weffc++
+CFLAGS += -Wall -Wextra -Winvalid-pch -Wpedantic -Weffc++
 ifneq ($(filter clang++,$(CXX)),)
-CFLAGS += -Weverything
+CFLAGS += -Weverything -Wno-c++98-compat
 endif
 CFLAGS += -ggdb3
 #CFLAGS += -O2
