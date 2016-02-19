@@ -1,5 +1,5 @@
 #CXX ?= g++
-CXX ?= clang++
+CXX = clang++
 
 CFLAGS := $(strip $(CFLAGS) -fno-exceptions -std=c++11)
 CFLAGS += -Wall -Wextra -Winvalid-pch -Wpedantic -Weffc++

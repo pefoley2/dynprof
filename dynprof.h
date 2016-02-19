@@ -40,7 +40,7 @@ double elapsed_time(struct timespec* before, struct timespec* after);
 class FuncInfo {
    public:
     FuncInfo(BPatch_variableExpr* _count, BPatch_variableExpr* _before, BPatch_variableExpr* _after)
-        : count(_count), before(_before), after(_after), children() {}
+        : count(_count), before(_before), after(_after), elapsed(), children() {}
     FuncInfo(const FuncInfo&) = delete;
     FuncInfo& operator=(const FuncInfo&) = delete;
     void addChild(BPatch_function* func);
@@ -58,6 +58,7 @@ class DynProf {
     DynProf(unique_ptr<string> _path, const char** _params)
         : path(std::move(_path)),
           params(_params),
+          executable(nullptr),
           app(nullptr),
           timespec_struct(nullptr),
           clock_func(nullptr),
