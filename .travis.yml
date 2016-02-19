@@ -9,11 +9,11 @@ cache:
     directories:
         - $HOME/dyninst
 before_install:
-    - test -d $HOME/dyninst || wget -N http://www.paradyn.org/release9.1.0/$DYNINST.tgz
-    - test -d $HOME/dyninst || tar xf $DYNINST.tgz
+    - test -d $HOME/dyninst/bin || wget -N http://www.paradyn.org/release9.1.0/$DYNINST.tgz
+    - test -d $HOME/dyninst/bin || tar xf $DYNINST.tgz
 install:
-    - test -d $HOME/dyninst || (mkdir -p $DYNINST/work && cd $DYNINST/work && cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/dyninst)
-    - test -d $HOME/dyninst || make -C $DYNINST/work install
+    - test -d $HOME/dyninst/bin || (mkdir -p $DYNINST/work && cd $DYNINST/work && cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/dyninst)
+    - test -d $HOME/dyninst/bin || make -C $DYNINST/work install
 script:
     - make
     - make test
