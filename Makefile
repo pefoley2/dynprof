@@ -21,7 +21,7 @@ LDFLAGS := $(LDFLAGS) -L/usr/local/lib -ldyninstAPI
 all: dynprof example/test
 
 example/test: example/test.cc
-	$(CXX) $(CFLAGS) -fno-sanitize=all -o $@ $<
+	$(CXX) $(filter-out -fsanitize=%,$(CFLAGS)) -o $@ $<
 
 %.h.gch: %.h
 	$(CXX) -x c++-header $(CFLAGS) -o $@ $<
