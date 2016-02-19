@@ -5,6 +5,10 @@ compiler:
     - gcc
 env:
     - DYNINST=DyninstAPI-9.1.0
+addons:
+    apt:
+        packages:
+            - cmake
 cache:
     directories:
         - $HOME/dyninst
