@@ -13,6 +13,7 @@ addons:
             - libboost-all-dev
             - libdwarf-dev
             - libelf-dev
+            - binutils-dev
 cache:
     directories:
         - $HOME/dyninst
