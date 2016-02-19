@@ -1,14 +1,15 @@
 language: cpp
-sudo: false
+sudo: required
+dist: trusty
 compiler:
     - clang
     - gcc
 env:
     - DYNINST=DyninstAPI-9.1.0
-addons:
-    apt:
-        packages:
-            - cmake
+#addons:
+#    apt:
+#        packages:
+#            - cmake
 cache:
     directories:
         - $HOME/dyninst
