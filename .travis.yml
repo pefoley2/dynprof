@@ -11,6 +11,8 @@ addons:
     apt:
         packages:
             - libboost-all-dev
+            - libdwarf-dev
+            - libelf-dev
 cache:
     directories:
         - $HOME/dyninst
