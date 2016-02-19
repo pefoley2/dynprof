@@ -1,9 +1,11 @@
-#CXX = g++
-CXX = clang++
+#CXX ?= g++
+CXX ?= clang++
 
-CFLAGS = -fno-exceptions -std=c++11
+CFLAGS := $(strip $(CFLAGS) -fno-exceptions -std=c++11)
 CFLAGS += -Wall -Wextra -Winvalid-pch -Wpedantic -Wno-c++98-compat -Weffc++
+ifneq ($(filter clang++,$(CXX)),)
 CFLAGS += -Weverything
+endif
 CFLAGS += -ggdb3
 #CFLAGS += -O2
 #CFLAGS += -flto -fuse-linker-plugin
