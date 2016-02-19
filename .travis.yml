@@ -12,7 +12,7 @@ cache:
         - $HOME/dyninst
 before_install:
     - sudo apt-get -qq update
-    - sudo apt-get -y install libiberty-dev libboost-all-dev libdwarf-dev libelf-dev
+    - sudo apt-get -y install libiberty-dev libboost-all-dev libelf-dev
     - test -d $HOME/dyninst/bin || wget -N http://www.paradyn.org/release9.1.0/$DYNINST.tgz
     - test -d $HOME/dyninst/bin || tar xf $DYNINST.tgz
 install:
