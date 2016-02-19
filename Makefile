@@ -1,7 +1,7 @@
 #CXX = g++
 CXX = clang++
 
-CFLAGS = -fno-exceptions -std=c++14
+CFLAGS = -fno-exceptions -std=c++11
 CFLAGS += -Wall -Wextra -Winvalid-pch -Wpedantic -Wno-c++98-compat -Weffc++
 CFLAGS += -Weverything
 CFLAGS += -ggdb3
