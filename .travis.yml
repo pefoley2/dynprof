@@ -1,5 +1,6 @@
 language: cpp
 sudo: required
+# we need a newer cmake
 dist: trusty
 compiler:
     - clang
@@ -9,7 +10,7 @@ env:
 addons:
     apt:
         packages:
-            - boost
+            - libboost-all-dev
 cache:
     directories:
         - $HOME/dyninst
