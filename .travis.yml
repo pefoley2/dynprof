@@ -3,10 +3,11 @@ language: cpp
 dist: trusty
 sudo: required
 
+compiler:
+    - clang
+    - gcc
+
 matrix:
-    compiler:
-        - clang
-        - gcc
     allow_failures:
         # FIXME: what the hell is going on here?
       - compiler: gcc
