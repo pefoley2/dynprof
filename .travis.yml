@@ -6,8 +6,7 @@ compiler:
     - clang
     - gcc
 env:
-    - DYNINST=DyninstAPI-9.1.0
-    - DYNINSTAPI_RT_LIB=$HOME/dyninst/lib/libdyninstAPI_RT.so
+    - DYNINST=DyninstAPI-9.1.0 DYNINSTAPI_RT_LIB=$HOME/dyninst/lib/libdyninstAPI_RT.so
 cache:
     apt: true
     directories:
