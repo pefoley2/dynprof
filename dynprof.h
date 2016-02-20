@@ -58,7 +58,7 @@ class DynProf {
     DynProf(unique_ptr<string> _path, const char** _params)
         : path(std::move(_path)),
           params(_params),
-          executable(nullptr),
+          executable(),
           app(nullptr),
           timespec_struct(nullptr),
           clock_func(nullptr),
