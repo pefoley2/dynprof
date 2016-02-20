@@ -20,5 +20,5 @@ install:
     - test -d $HOME/dyninst/include || (mkdir -p $DYNINST/work && cd $DYNINST/work && cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/dyninst -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DUSE_GNU_DEMANGLER=1)
     - test -d $HOME/dyninst/include || make -C $DYNINST/work install
 script:
-    - CFLAGS="-Werror -isystem $HOME/dyninst/include" LDFLAGS="-L$HOME/dyninst/lib" LD_LIBRARY_PATH=$HOME/dyninst/lib make binary test
+    - CFLAGS="-Werror -D_GLIBCXX_USE_CXX11_ABI=0 -isystem $HOME/dyninst/include" LDFLAGS="-L$HOME/dyninst/lib" LD_LIBRARY_PATH=$HOME/dyninst/lib make binary test
     - ./test_dynprof
