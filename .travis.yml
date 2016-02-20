@@ -4,7 +4,9 @@ dist: trusty
 sudo: required
 
 matrix:
-    compiler: clang
+    compiler:
+        - clang
+        - gcc
     allow_failures:
         # FIXME: what the hell is going on here?
       - compiler: gcc
