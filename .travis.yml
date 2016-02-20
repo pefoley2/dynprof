@@ -1,4 +1,5 @@
 language: cpp
+
 # we need a newer cmake
 dist: trusty
 sudo: required
