@@ -1,5 +1,7 @@
-#CXX ?= g++
+ifeq ($(origin CXX),default)
+#CXX = g++
 CXX = clang++
+endif
 
 CFLAGS := $(strip $(CFLAGS) -fno-exceptions -std=c++11)
 CFLAGS += -Wall -Wextra -Winvalid-pch -Wpedantic -Weffc++
