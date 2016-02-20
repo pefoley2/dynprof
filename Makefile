@@ -18,7 +18,7 @@ CFLAGS += -ggdb3
 #CFLAGS += -fsanitize=undefined
 
 
-LDFLAGS := $(LDFLAGS) -L/usr/local/lib -ldyninstAPI
+LDFLAGS := $(LDFLAGS) -L/usr/local/lib -ldyninstAPI -Wl,-O1 -Wl,--as-needed
 
 all: dynprof example/test
 
