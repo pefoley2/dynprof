@@ -6,7 +6,7 @@ endif
 CFLAGS := $(strip $(CFLAGS) -fno-exceptions -std=c++11)
 CFLAGS += -Wall -Wextra -Winvalid-pch -Wpedantic -Weffc++
 ifneq ($(filter clang++,$(CXX)),)
-CFLAGS += -Weverything -Wno-c++98-compat
+CFLAGS += -Weverything -Wno-c++98-compat -march=native -pipe
 endif
 CFLAGS += -ggdb3
 #CFLAGS += -O2
