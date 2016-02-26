@@ -48,9 +48,6 @@ class FuncInfo {
     vector<BPatch_function*> children;
 };
 
-typedef unordered_map<BPatch_function*, FuncInfo*> function_mapping;
-function_mapping& func_map();
-
 class DynProf {
    public:
     DynProf(unique_ptr<string> _path, const char** _params)
@@ -61,7 +58,7 @@ class DynProf {
           timespec_struct(nullptr),
           clock_func(nullptr),
           bpatch(),
-          exit_callback(bpatch.registerExitCallback(ExitCallback)) {
+          func_map() {
         size_t offset = path->rfind("/");
         executable = path->substr(offset + 1);
     }
@@ -80,7 +77,7 @@ class DynProf {
     BPatch_type* timespec_struct;
     BPatch_function* clock_func;
     BPatch bpatch;
-    BPatchExitCallback exit_callback;
+    unordered_map<BPatch_function*, FuncInfo*> func_map;
     BPatch_function* get_entry_point();
     void hook_functions();
     void create_structs();
@@ -93,10 +90,7 @@ class DynProf {
     void createSnippets(BPatch_function* func);
     void recordFunc(BPatch_function* func);
     [[noreturn]] void shutdown();
-    // Class-wide stuff
-    static double elapsed_time(struct timespec* before, struct timespec* after);
-    static void printElapsedTime();
-    static void ExitCallback(BPatch_thread* proc, BPatch_exitType exit_type);
+    double elapsed_time(struct timespec* before, struct timespec* after);
 };
 
 #endif

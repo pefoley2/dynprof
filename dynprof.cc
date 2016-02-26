@@ -25,12 +25,12 @@ void DynProf::recordFunc(BPatch_function* func) {
     BPatch_variableExpr* count = app->malloc(*app->getImage()->findType("int"));
     BPatch_variableExpr* before = app->malloc(*timespec_struct);
     BPatch_variableExpr* after = app->malloc(*timespec_struct);
-    func_map().insert(make_pair(func, new FuncInfo(count, before, after)));
+    func_map.insert(make_pair(func, new FuncInfo(count, before, after)));
 }
 
 void DynProf::enum_subroutines(BPatch_function* func) {
     // Already visited.
-    if (func_map().count(func)) {
+    if (func_map.count(func)) {
         return;
     }
     recordFunc(func);
@@ -51,7 +51,7 @@ void DynProf::enum_subroutines(BPatch_function* func) {
                 // cout << "skip:" << subfunc->getName() << endl;
             } else {
                 cout << "sub:" << subfunc->getName() << endl;
-                func_map()[func]->addChild(subfunc);
+                func_map[func]->addChild(subfunc);
                 enum_subroutines(subfunc);
             }
         }
@@ -88,8 +88,8 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
     entry_args.push_back(new BPatch_constExpr(func->getName().c_str()));
 
     BPatch_arithExpr incCount(
-        BPatch_assign, *func_map()[func]->count,
-        BPatch_arithExpr(BPatch_plus, *func_map()[func]->count, BPatch_constExpr(1)));
+        BPatch_assign, *func_map[func]->count,
+        BPatch_arithExpr(BPatch_plus, *func_map[func]->count, BPatch_constExpr(1)));
 
     // TODO(peter): remove this for final product.
     vector<BPatch_function*> printf_funcs;
@@ -104,7 +104,7 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
 
     vector<BPatch_snippet*> clock_args;
     clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
-    clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map()[func]->before));
+    clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map[func]->before));
     BPatch_funcCallExpr before_record(*clock_func, clock_args);
 
     vector<BPatch_snippet*> entry_vec{&incCount, &entry_snippet};
@@ -139,7 +139,7 @@ bool DynProf::createAfterSnippet(BPatch_function* func) {
 
     vector<BPatch_snippet*> clock_args;
     clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
-    clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map()[func]->after));
+    clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map[func]->after));
     BPatch_funcCallExpr after_record(*clock_func, clock_args);
 
     app->insertSnippet(exit_snippet, *exit_point->at(0), BPatch_callAfter);
@@ -166,7 +166,7 @@ void DynProf::registerCleanupSnippet(BPatch_function* func) {
     }
 
     vector<BPatch_snippet*> snippets;
-    for (auto& child_func : func_map()) {
+    for (auto& child_func : func_map) {
         if (child_func.first->getName() == DEFAULT_ENTRY_POINT) {
             continue;
         }
@@ -285,41 +285,10 @@ double DynProf::elapsed_time(struct timespec* before, struct timespec* after) {
     return elapsed.count();
 }
 
-void DynProf::printElapsedTime() {
-    struct timespec* before = static_cast<struct timespec*>(malloc(sizeof(struct timespec)));
-    struct timespec* after = static_cast<struct timespec*>(malloc(sizeof(struct timespec)));
-    memset(before, 0, sizeof(struct timespec));
-    memset(after, 0, sizeof(struct timespec));
-    for (auto& func : func_map()) {
-        vector<BPatch_variableExpr*>* components = func.second->before->getComponents();
-        long sec, nsec;
-        components->at(0)->readValue(&sec);
-        components->at(1)->readValue(&nsec);
-        // cerr << fixed << elapsed_time(before, after) << ":" << func.first->getName() << endl;
-        cerr << fixed << sec << ":" << nsec << ":" << func.first->getName() << endl;
-    }
-    free(before);
-    free(after);
-}
-
-void DynProf::ExitCallback(BPatch_thread* /*unused*/, BPatch_exitType exit_type) {
-    if (exit_type != ExitedNormally) {
-        cerr << "Error: exited: " << exit_type << endl;
-        return;
-    }
-    printElapsedTime();
-}
-
 void DynProf::shutdown() {
     BPatch_process* proc = dynamic_cast<BPatch_process*>(app);
     if (proc) {
         proc->terminateExecution();
     }
     exit(1);
-}
-
-// Needed for the ExitCallback
-function_mapping& func_map() {
-    static function_mapping* funcs = new function_mapping();
-    return *funcs;
 }
