@@ -19,7 +19,6 @@ CFLAGS += -ggdb3
 
 MAKEFLAGS=rR
 
-
 LDFLAGS := $(LDFLAGS) -L/usr/local/lib -ldyninstAPI -Wl,-O1 -Wl,--as-needed
 
 all: dynprof example/test
@@ -52,7 +51,10 @@ tidy:
 
 test: all
 	./dynprof example/test
-binary: all
+
+binary: test_dynprof
+
+test_dynprof: dynprof example/test
 	./dynprof --write example/test
 
 clean:
