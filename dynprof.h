@@ -1,6 +1,6 @@
 /*
  * DynProf, an Dyninst-based dynamic profiler.
- * Copyright (C) 2015 Peter Foley
+ * Copyright (C) 2015-16 Peter Foley
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,15 +27,10 @@
 #error "Please use Dyninst 9.0 or newer"
 #endif
 
-#include <chrono>
-#include <unordered_map>
-
 #define DEFAULT_ENTRY_POINT "main"
 
-const char** get_params(vector<string> args);
-unique_ptr<string> get_path(string exe);
-void ExitCallback(BPatch_thread* proc, BPatch_exitType exit_type);
-double elapsed_time(struct timespec* before, struct timespec* after);
+#include <chrono>
+#include <unordered_map>
 
 class FuncInfo {
    public:
@@ -53,6 +48,9 @@ class FuncInfo {
     vector<BPatch_function*> children;
 };
 
+typedef unordered_map<BPatch_function*, FuncInfo*> function_mapping;
+function_mapping& func_map();
+
 class DynProf {
    public:
     DynProf(unique_ptr<string> _path, const char** _params)
@@ -63,7 +61,6 @@ class DynProf {
           timespec_struct(nullptr),
           clock_func(nullptr),
           bpatch(),
-          func_map(),
           exit_callback(bpatch.registerExitCallback(ExitCallback)) {
         size_t offset = path->rfind("/");
         executable = path->substr(offset + 1);
@@ -74,8 +71,6 @@ class DynProf {
     void setupBinary();
     int waitForExit();
     bool writeOutput();
-    void printCallCounts();
-    void printElapsedTime();
 
    private:
     unique_ptr<string> path;
@@ -85,7 +80,6 @@ class DynProf {
     BPatch_type* timespec_struct;
     BPatch_function* clock_func;
     BPatch bpatch;
-    unordered_map<BPatch_function*, FuncInfo*> func_map;
     BPatchExitCallback exit_callback;
     unique_ptr<vector<BPatch_function*>> get_entry_point();
     void hook_functions();
@@ -97,6 +91,11 @@ class DynProf {
     bool createAfterSnippet(BPatch_function* func);
     void createSnippets(BPatch_function* func);
     void recordFunc(BPatch_function* func);
+    // Class-wide stuff
+    static double elapsed_time(struct timespec* before, struct timespec* after);
+    static void printCallCounts();
+    static void printElapsedTime();
+    static void ExitCallback(BPatch_thread* proc, BPatch_exitType exit_type);
 };
 
 #endif

@@ -1,6 +1,6 @@
 /*
  * DynProf, an Dyninst-based dynamic profiler.
- * Copyright (C) 2015 Peter Foley
+ * Copyright (C) 2015-16 Peter Foley
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -19,58 +19,18 @@
 
 #include "dynprof.h"
 
-unique_ptr<string> get_path(string exe) {
-    unique_ptr<string> path(new string);
-    path->assign(getenv("PATH"));
-    unique_ptr<string> fullpath(new string);
-    size_t current = 0;
-    size_t offset;
-    do {
-        offset = path->find_first_of(":", current);
-        fullpath->assign(path->substr(current, offset - current));
-        fullpath->append("/");
-        fullpath->append(exe);
-        if (access(fullpath->c_str(), F_OK) == 0) {
-            return fullpath;
-        }
-        current = offset + 1;
-    } while (offset != string::npos);
-
-    char* resolved_path = realpath(exe.c_str(), nullptr);
-    if (resolved_path) {
-        fullpath->assign(resolved_path);
-        if (access(fullpath->c_str(), F_OK) == 0) {
-            return fullpath;
-        }
-    }
-    return nullptr;
-}
-
-const char** get_params(vector<string> args) {
-    char** params = static_cast<char**>(malloc((args.size() + 1) * sizeof(char*)));
-    // Skip the exe, that's resolved by get_path
-    for (size_t i = 1; i < args.size(); i++) {
-        size_t arglen = args[i].size() + 1;
-        params[i] = static_cast<char*>(malloc(arglen));
-        memset(params[i], 0, arglen);
-        strncpy(params[i], args[i].c_str(), args[i].size() + 1);
-    }
-    params[args.size()] = nullptr;
-    return const_cast<const char**>(params);
-}
-
 void FuncInfo::addChild(BPatch_function* func) { children.push_back(func); }
 
 void DynProf::recordFunc(BPatch_function* func) {
     BPatch_variableExpr* count = app->malloc(*app->getImage()->findType("int"));
     BPatch_variableExpr* before = app->malloc(*timespec_struct);
     BPatch_variableExpr* after = app->malloc(*timespec_struct);
-    func_map.insert(make_pair(func, new FuncInfo(count, before, after)));
+    func_map().insert(make_pair(func, new FuncInfo(count, before, after)));
 }
 
 void DynProf::enum_subroutines(BPatch_function* func) {
     // Already visited.
-    if (func_map.count(func)) {
+    if (func_map().count(func)) {
         return;
     }
     // Register entry/exit snippets.
@@ -89,7 +49,7 @@ void DynProf::enum_subroutines(BPatch_function* func) {
                 // cout << "skip:" << subfunc->getName() << endl;
             } else {
                 cout << "sub:" << subfunc->getName() << endl;
-                func_map[func]->addChild(subfunc);
+                func_map()[func]->addChild(subfunc);
                 enum_subroutines(subfunc);
             }
         }
@@ -123,8 +83,8 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
     entry_args.push_back(new BPatch_constExpr(func->getName().c_str()));
 
     BPatch_arithExpr incCount(
-        BPatch_assign, *func_map[func]->count,
-        BPatch_arithExpr(BPatch_plus, *func_map[func]->count, BPatch_constExpr(1)));
+        BPatch_assign, *func_map()[func]->count,
+        BPatch_arithExpr(BPatch_plus, *func_map()[func]->count, BPatch_constExpr(1)));
 
     // TODO(peter): remove this for final product.
     vector<BPatch_function*> printf_funcs;
@@ -139,7 +99,7 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
 
     vector<BPatch_snippet*> clock_args;
     clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
-    clock_args.push_back(func_map[func]->before);
+    clock_args.push_back(func_map()[func]->before);
     BPatch_funcCallExpr before_record(*clock_func, clock_args);
 
     vector<BPatch_snippet*> entry_vec{&incCount, &entry_snippet};
@@ -174,7 +134,7 @@ bool DynProf::createAfterSnippet(BPatch_function* func) {
 
     vector<BPatch_snippet*> clock_args;
     clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
-    clock_args.push_back(func_map[func]->after);
+    clock_args.push_back(func_map()[func]->after);
     BPatch_funcCallExpr after_record(*clock_func, clock_args);
 
     app->insertSnippet(exit_snippet, *exit_point->at(0), BPatch_callAfter);
@@ -270,7 +230,7 @@ bool DynProf::writeOutput() {
 
 void DynProf::printCallCounts() {
     int count;
-    for (auto& func : func_map) {
+    for (auto& func : func_map()) {
         func.second->count->readValue(&count);
         if (count) {
             cerr << count << ":" << func.first->getName() << endl;
@@ -278,7 +238,7 @@ void DynProf::printCallCounts() {
     }
 }
 
-double elapsed_time(struct timespec* before, struct timespec* after) {
+double DynProf::elapsed_time(struct timespec* before, struct timespec* after) {
     chrono::nanoseconds before_c =
         chrono::seconds(before->tv_sec) + chrono::nanoseconds(before->tv_nsec);
     chrono::nanoseconds after_c =
@@ -292,7 +252,7 @@ void DynProf::printElapsedTime() {
     struct timespec* after = static_cast<struct timespec*>(malloc(sizeof(struct timespec)));
     memset(before, 0, sizeof(struct timespec));
     memset(after, 0, sizeof(struct timespec));
-    for (auto& func : func_map) {
+    for (auto& func : func_map()) {
         func.second->before->readValue(before);
         func.second->after->readValue(after);
         cerr << fixed << elapsed_time(before, after) << ":" << func.first->getName() << endl;
@@ -301,43 +261,16 @@ void DynProf::printElapsedTime() {
     free(after);
 }
 
-// FIXME: is there a way to do this without global variables?
-static DynProf* prof;
-
-void ExitCallback(BPatch_thread* /*unused*/, BPatch_exitType exit_type) {
+void DynProf::ExitCallback(BPatch_thread* /*unused*/, BPatch_exitType exit_type) {
     if (exit_type != ExitedNormally) {
         return;
     }
-    prof->printCallCounts();
-    prof->printElapsedTime();
+    printCallCounts();
+    printElapsedTime();
 }
 
-int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        cerr << "Usage: ./dynprof (--write) [program] arg1,arg2,arg3..." << endl;
-        return 1;
-    }
-    vector<string> args(argv, argv + argc);
-    bool binary_edit = false;
-    if (args[1] == "--write") {
-        binary_edit = true;
-        args.erase(args.begin());
-    }
-    unique_ptr<string> path = get_path(args[1]);
-    if (!path) {
-        cerr << args[1] << " not found in path" << endl;
-        return 1;
-    }
-    args.erase(args.begin());
-    const char** params = get_params(args);
-    // set argv[0] to the original path.
-    params[0] = path->c_str();
-    prof = new DynProf(std::move(path), params);
-    if (binary_edit) {
-        prof->setupBinary();
-        return prof->writeOutput();
-    }
-
-    prof->start();
-    return prof->waitForExit();
+// Needed for the ExitCallback
+function_mapping& func_map() {
+    static function_mapping* funcs = new function_mapping();
+    return *funcs;
 }

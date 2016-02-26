@@ -5,4 +5,5 @@ CMakeFiles
 work
 example/test
 *.swp
+*.o
 test_dynprof

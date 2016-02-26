@@ -3,10 +3,10 @@ ifeq ($(origin CXX),default)
 CXX = clang++
 endif
 
-CFLAGS := $(strip $(CFLAGS) -fno-exceptions -std=c++11)
+CFLAGS := -fno-exceptions -std=c++11 -march=native -pipe
 CFLAGS += -Wall -Wextra -Winvalid-pch -Wpedantic -Weffc++
 ifneq ($(filter clang++,$(CXX)),)
-CFLAGS += -Weverything -Wno-c++98-compat -march=native -pipe
+CFLAGS += -Weverything -Wno-c++98-compat
 endif
 CFLAGS += -ggdb3
 #CFLAGS += -O2
@@ -16,6 +16,8 @@ CFLAGS += -ggdb3
 #CFLAGS += -fsanitize=thread
 #CFLAGS += -fsanitize=memory
 #CFLAGS += -fsanitize=undefined
+
+MAKEFLAGS=rR
 
 
 LDFLAGS := $(LDFLAGS) -L/usr/local/lib -ldyninstAPI -Wl,-O1 -Wl,--as-needed
@@ -28,33 +30,32 @@ example/test: example/test.cc
 %.h.gch: %.h
 	$(CXX) -x c++-header $(CFLAGS) -o $@ $<
 
-dynprof: dynprof.cc dynprof.h dyninst.h.gch
-	$(CXX) $(CFLAGS) $(LDFLAGS) -include dyninst.h -o $@ $<
+dynprof.h: dyninst.h.gch
+
+%.o: %.cc dynprof.h
+	$(CXX) $(CFLAGS) -include dyninst.h -c $< -o $@
+
+dynprof: dynprof.o main.o
+	$(CXX) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
 format:
 	clang-format -i -style="{BasedOnStyle: google, IndentWidth: 4, ColumnLimit: 100}" *.cc *.h example/*.cc
 
 analyze:
-	clang++ --analyze $(CFLAGS) -o /dev/null dynprof.cc
+	clang++ --analyze $(CFLAGS) -o /dev/null *.cc
 
 tidy:
+	mkdir work
+	(cd work && cmake ..)
 	make -C work
-	clang-tidy -analyze-temporary-dtors -header-filter='.*' -checks='*,-llvm-header-guard' -p work dynprof.cc
-
-cppcheck:
-	cppcheck -I/usr/lib/gcc/x86_64-pc-linux-gnu/5.3.0/include/g++-v5 \
-	-I/usr/lib/gcc/x86_64-pc-linux-gnu/5.3.0/include/g++-v5/x86_64-pc-linux-gnu \
-	-I/usr/lib/gcc/x86_64-pc-linux-gnu/5.3.0/include/g++-v5/backward \
-	-I/usr/lib/gcc/x86_64-pc-linux-gnu/5.3.0/include \
-	-I/usr/local/include \
-	-I/usr/lib/gcc/x86_64-pc-linux-gnu/5.3.0/include-fixed \
-	-I/usr/include \
-	--enable=all --max-configs=1 --platform=unix64 --inconclusive .
-
+	clang-tidy -analyze-temporary-dtors -header-filter='.*' -checks='*,-llvm-header-guard' -p work *.cc
 
 test: all
 	./dynprof example/test
 binary: all
 	./dynprof --write example/test
 
-.PHONY: all format analyze tidy test
+clean:
+	rm -rf *.o dyninst.h.gch dynprof test_dynprof example/test work
+
+.PHONY: all format analyze tidy test binary clean
