@@ -104,7 +104,7 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
 
     vector<BPatch_snippet*> clock_args;
     clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
-    clock_args.push_back(func_map()[func]->before);
+    clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map()[func]->before));
     BPatch_funcCallExpr before_record(*clock_func, clock_args);
 
     vector<BPatch_snippet*> entry_vec{&incCount, &entry_snippet};
@@ -139,7 +139,7 @@ bool DynProf::createAfterSnippet(BPatch_function* func) {
 
     vector<BPatch_snippet*> clock_args;
     clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
-    clock_args.push_back(func_map()[func]->after);
+    clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map()[func]->after));
     BPatch_funcCallExpr after_record(*clock_func, clock_args);
 
     app->insertSnippet(exit_snippet, *exit_point->at(0), BPatch_callAfter);
@@ -166,15 +166,21 @@ void DynProf::registerCleanupSnippet(BPatch_function* func) {
     }
 
     vector<BPatch_snippet*> snippets;
-    vector<BPatch_snippet*> exit_args;
-    exit_args.push_back(new BPatch_constExpr("%d:%s\n"));
     for (auto& child_func : func_map()) {
         if (child_func.first->getName() == DEFAULT_ENTRY_POINT) {
             continue;
         }
-        exit_args.emplace(exit_args.begin() + 1, child_func.second->count);
-        exit_args.emplace(exit_args.begin() + 2,
-                          new BPatch_constExpr(child_func.first->getName().c_str()));
+        vector<BPatch_variableExpr*>* components = child_func.second->before->getComponents();
+        if (components->size() != 2) {
+            cerr << "Invalid number of components." << endl;
+            shutdown();
+        }
+        vector<BPatch_snippet*> exit_args;
+        exit_args.push_back(new BPatch_constExpr("%d:%ld:%ld:%s\n"));
+        exit_args.push_back(child_func.second->count);
+        exit_args.push_back(components->at(0));
+        exit_args.push_back(components->at(1));
+        exit_args.push_back(new BPatch_constExpr(child_func.first->getName().c_str()));
 
         snippets.push_back(new BPatch_funcCallExpr(*printf_funcs.at(0), exit_args));
     }
@@ -285,9 +291,12 @@ void DynProf::printElapsedTime() {
     memset(before, 0, sizeof(struct timespec));
     memset(after, 0, sizeof(struct timespec));
     for (auto& func : func_map()) {
-        func.second->before->readValue(before);
-        func.second->after->readValue(after);
-        cerr << fixed << elapsed_time(before, after) << ":" << func.first->getName() << endl;
+        vector<BPatch_variableExpr*>* components = func.second->before->getComponents();
+        long sec, nsec;
+        components->at(0)->readValue(&sec);
+        components->at(1)->readValue(&nsec);
+        // cerr << fixed << elapsed_time(before, after) << ":" << func.first->getName() << endl;
+        cerr << fixed << sec << ":" << nsec << ":" << func.first->getName() << endl;
     }
     free(before);
     free(after);
