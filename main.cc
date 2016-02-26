@@ -63,9 +63,7 @@ const char** get_params(vector<string> args) {
     return const_cast<const char**>(params);
 }
 
-void usage() {
-        cerr << "Usage: ./dynprof (--write) [program] arg1,arg2,arg3..." << endl;
-}
+void usage() { cerr << "Usage: ./dynprof (--write) [program] arg1,arg2,arg3..." << endl; }
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -75,7 +73,7 @@ int main(int argc, char* argv[]) {
     vector<string> args(argv, argv + argc);
     bool binary_edit = false;
     if (args[1] == "--write") {
-        if(argc < 3) {
+        if (argc < 3) {
             usage();
             return 1;
         }

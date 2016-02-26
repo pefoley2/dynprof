@@ -92,7 +92,7 @@ class DynProf {
     void registerCleanupSnippet(BPatch_function* func);
     void createSnippets(BPatch_function* func);
     void recordFunc(BPatch_function* func);
-    [[ noreturn ]] void shutdown();
+    [[noreturn]] void shutdown();
     // Class-wide stuff
     static double elapsed_time(struct timespec* before, struct timespec* after);
     static void printElapsedTime();
