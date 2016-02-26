@@ -9,6 +9,7 @@ void foo(unsigned int x) {
     bar(x);
     usleep(x);
     baz(x);
+    baz(x);
 }
 void bar(unsigned int x) { usleep(x); }
 void baz(unsigned int x) { usleep(x); }
