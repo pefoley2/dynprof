@@ -42,11 +42,11 @@ format:
 	clang-format -i -style="{BasedOnStyle: google, IndentWidth: 4, ColumnLimit: 100}" *.cc *.h example/*.cc
 
 analyze:
-	clang++ --analyze $(CFLAGS) -o /dev/null *.cc
+	clang++ --analyze $(CFLAGS) -o /dev/null main.cc
+	clang++ --analyze $(CFLAGS) -o /dev/null dynprof.cc
 
 tidy:
-	mkdir work
-	(cd work && cmake ..)
+	test -d work || (mkdir work && cd work && cmake ..)
 	make -C work
 	clang-tidy -analyze-temporary-dtors -header-filter='.*' -checks='*,-llvm-header-guard' -p work *.cc
 
