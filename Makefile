@@ -10,7 +10,7 @@ CFLAGS += -Weverything -Wno-c++98-compat
 endif
 CFLAGS += -ggdb3
 #CFLAGS += -O2
-#CFLAGS += -flto -fuse-linker-plugin
+#CFLAGS += -flto
 #CFLAGS += -floop-interchange -floop-strip-mine -floop-block -fgraphite-identity
 #CFLAGS += -fsanitize=address
 #CFLAGS += -fsanitize=thread
@@ -19,7 +19,7 @@ CFLAGS += -ggdb3
 
 MAKEFLAGS=rR
 
-LDFLAGS := $(LDFLAGS) -L/usr/local/lib -ldyninstAPI -Wl,-O1 -Wl,--as-needed
+LDFLAGS := $(strip $(LDFLAGS) -ldyninstAPI -Wl,-O1 -Wl,--as-needed)
 
 all: dynprof example/test
 

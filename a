@@ -1,3 +1,2 @@
 #!/bin/bash
 LSAN_OPTIONS=detect_leaks=0 ./dynprof $@
-#LSAN_OPTIONS=suppressions=asan.supp ./dynprof $@
