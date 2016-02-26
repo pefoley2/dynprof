@@ -33,9 +33,11 @@ void DynProf::enum_subroutines(BPatch_function* func) {
     if (func_map().count(func)) {
         return;
     }
-    // Register entry/exit snippets.
     recordFunc(func);
-    createSnippets(func);
+    if(func->getName() != DEFAULT_ENTRY_POINT) {
+        // Register entry/exit snippets.
+        createSnippets(func);
+    }
     unique_ptr<vector<BPatch_point*>> subroutines(func->findPoint(BPatch_subroutine));
     if (!subroutines) {
         // This function doesn't call any others.
@@ -60,6 +62,10 @@ unique_ptr<vector<BPatch_function*>> DynProf::get_entry_point() {
     unique_ptr<vector<BPatch_function*>> funcs(new vector<BPatch_function*>);
     // Should only return one function.
     app->getImage()->findFunction(DEFAULT_ENTRY_POINT, *funcs);
+    if(funcs->size() != 1) {
+        cerr << "Failed to find exactly one entry point for: " DEFAULT_ENTRY_POINT << endl;
+        exit(1);
+    }
     return funcs;
 }
 
@@ -68,6 +74,8 @@ void DynProf::hook_functions() {
     for (auto func : *functions) {
         cerr << "func:" << func->getName() << endl;
         enum_subroutines(func);
+        // FIXME: doesn't always work (e.g. ls)
+        registerCleanupSnippet(func);
     }
 }
 
@@ -141,6 +149,42 @@ bool DynProf::createAfterSnippet(BPatch_function* func) {
     // FIXME: why does this break when added to a seq with other snippets?
     app->insertSnippet(after_record, *exit_point->at(0), BPatch_callAfter);
     return true;
+}
+
+void DynProf::registerCleanupSnippet(BPatch_function* func) {
+    unique_ptr<vector<BPatch_point*>> exit_point(func->findPoint(BPatch_exit));
+    if (!exit_point || exit_point->size() != 1) {
+        cerr << "Could not find exit point for " << func->getName() << endl;
+        return;
+    }
+
+    // TODO(peter): remove this for final product.
+    vector<BPatch_function*> printf_funcs;
+    // printf isn't profilable.
+    app->getImage()->findFunction("printf", printf_funcs, true, true, true);
+    if (printf_funcs.size() != 1) {
+        cerr << "Could not find printf" << endl;
+        return;
+    }
+
+    vector<BPatch_snippet*> snippets;
+    vector<BPatch_snippet*> exit_args;
+    exit_args.push_back(new BPatch_constExpr("%d:%s\n"));
+    for (auto& child_func : func_map()) {
+        if(child_func.first->getName() == DEFAULT_ENTRY_POINT) {
+            continue;
+        }
+        exit_args.emplace(exit_args.begin()+1,child_func.second->count);
+        exit_args.emplace(exit_args.begin()+2,new BPatch_constExpr(child_func.first->getName().c_str()));
+
+        snippets.push_back(new BPatch_funcCallExpr(*printf_funcs.at(0), exit_args));
+
+    }
+    BPatch_sequence exit_snippet(snippets);
+
+    if(!app->insertSnippet(exit_snippet, *exit_point->at(0), BPatch_callAfter)) {
+        cerr << "Failed to insert cleanup snippets" << endl;
+    }
 }
 
 void DynProf::createSnippets(BPatch_function* func) {
@@ -228,16 +272,6 @@ bool DynProf::writeOutput() {
     return !status;
 }
 
-void DynProf::printCallCounts() {
-    int count;
-    for (auto& func : func_map()) {
-        func.second->count->readValue(&count);
-        if (count) {
-            cerr << count << ":" << func.first->getName() << endl;
-        }
-    }
-}
-
 double DynProf::elapsed_time(struct timespec* before, struct timespec* after) {
     chrono::nanoseconds before_c =
         chrono::seconds(before->tv_sec) + chrono::nanoseconds(before->tv_nsec);
@@ -263,9 +297,9 @@ void DynProf::printElapsedTime() {
 
 void DynProf::ExitCallback(BPatch_thread* /*unused*/, BPatch_exitType exit_type) {
     if (exit_type != ExitedNormally) {
+        cerr << "Error: exited: " << exit_type << endl;
         return;
     }
-    printCallCounts();
     printElapsedTime();
 }
 

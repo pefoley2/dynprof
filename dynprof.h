@@ -89,11 +89,11 @@ class DynProf {
     void enum_subroutines(BPatch_function* func);
     bool createBeforeSnippet(BPatch_function* func);
     bool createAfterSnippet(BPatch_function* func);
+    void registerCleanupSnippet(BPatch_function* func);
     void createSnippets(BPatch_function* func);
     void recordFunc(BPatch_function* func);
     // Class-wide stuff
     static double elapsed_time(struct timespec* before, struct timespec* after);
-    static void printCallCounts();
     static void printElapsedTime();
     static void ExitCallback(BPatch_thread* proc, BPatch_exitType exit_type);
 };

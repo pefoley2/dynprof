@@ -21,6 +21,7 @@
 
 unique_ptr<string> get_path(string exe);
 const char** get_params(vector<string> args);
+void usage();
 
 unique_ptr<string> get_path(string exe) {
     unique_ptr<string> path(new string);
@@ -62,14 +63,22 @@ const char** get_params(vector<string> args) {
     return const_cast<const char**>(params);
 }
 
+void usage() {
+        cerr << "Usage: ./dynprof (--write) [program] arg1,arg2,arg3..." << endl;
+}
+
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        cerr << "Usage: ./dynprof (--write) [program] arg1,arg2,arg3..." << endl;
+        usage();
         return 1;
     }
     vector<string> args(argv, argv + argc);
     bool binary_edit = false;
     if (args[1] == "--write") {
+        if(argc < 3) {
+            usage();
+            return 1;
+        }
         binary_edit = true;
         args.erase(args.begin());
     }

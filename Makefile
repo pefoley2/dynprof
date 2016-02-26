@@ -57,7 +57,10 @@ binary: test_dynprof
 test_dynprof: dynprof example/test
 	./dynprof --write example/test
 
+run: test_dynprof
+	./test_dynprof
+
 clean:
 	rm -rf *.o dyninst.h.gch dynprof test_dynprof example/test work
 
-.PHONY: all format analyze tidy test binary clean
+.PHONY: all format analyze tidy test binary run clean
