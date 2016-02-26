@@ -4,6 +4,7 @@ CMakeCache.txt
 CMakeFiles
 work
 example/test
+example/time
 *.swp
 *.o
 test_dynprof

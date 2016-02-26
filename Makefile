@@ -21,9 +21,9 @@ MAKEFLAGS=rR
 
 LDFLAGS := $(strip $(LDFLAGS) -ldyninstAPI -Wl,-O1 -Wl,--as-needed)
 
-all: dynprof example/test
+all: dynprof example/test example/time
 
-example/test: example/test.cc
+example/%: example/%.cc
 	$(CXX) $(filter-out -fsanitize=%,$(CFLAGS)) -o $@ $<
 
 %.h.gch: %.h
