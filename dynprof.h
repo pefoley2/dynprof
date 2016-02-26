@@ -81,7 +81,7 @@ class DynProf {
     BPatch_function* clock_func;
     BPatch bpatch;
     BPatchExitCallback exit_callback;
-    unique_ptr<vector<BPatch_function*>> get_entry_point();
+    BPatch_function* get_entry_point();
     void hook_functions();
     void create_structs();
     void find_funcs();
@@ -92,6 +92,7 @@ class DynProf {
     void registerCleanupSnippet(BPatch_function* func);
     void createSnippets(BPatch_function* func);
     void recordFunc(BPatch_function* func);
+    [[ noreturn ]] void shutdown();
     // Class-wide stuff
     static double elapsed_time(struct timespec* before, struct timespec* after);
     static void printElapsedTime();

@@ -58,25 +58,22 @@ void DynProf::enum_subroutines(BPatch_function* func) {
     }
 }
 
-unique_ptr<vector<BPatch_function*>> DynProf::get_entry_point() {
+BPatch_function* DynProf::get_entry_point() {
     unique_ptr<vector<BPatch_function*>> funcs(new vector<BPatch_function*>);
     // Should only return one function.
     app->getImage()->findFunction(DEFAULT_ENTRY_POINT, *funcs);
     if(funcs->size() != 1) {
         cerr << "Failed to find exactly one entry point for: " DEFAULT_ENTRY_POINT << endl;
-        exit(1);
+        shutdown();
     }
-    return funcs;
+    return funcs->at(0);
 }
 
 void DynProf::hook_functions() {
-    unique_ptr<vector<BPatch_function*>> functions = get_entry_point();
-    for (auto func : *functions) {
-        cerr << "func:" << func->getName() << endl;
-        enum_subroutines(func);
-        // FIXME: doesn't always work (e.g. ls)
-        registerCleanupSnippet(func);
-    }
+    BPatch_function* func = get_entry_point();
+    cerr << "func:" << func->getName() << endl;
+    enum_subroutines(func);
+    registerCleanupSnippet(func);
 }
 
 bool DynProf::createBeforeSnippet(BPatch_function* func) {
@@ -154,8 +151,9 @@ bool DynProf::createAfterSnippet(BPatch_function* func) {
 void DynProf::registerCleanupSnippet(BPatch_function* func) {
     unique_ptr<vector<BPatch_point*>> exit_point(func->findPoint(BPatch_exit));
     if (!exit_point || exit_point->size() != 1) {
+        // FIXME: doesn't work with stripped binaries.
         cerr << "Could not find exit point for " << func->getName() << endl;
-        return;
+        shutdown();
     }
 
     // TODO(peter): remove this for final product.
@@ -207,7 +205,7 @@ void DynProf::create_structs() {
     timespec_struct = bpatch.createStruct("timespec", field_names, field_types);
     if (!timespec_struct) {
         cerr << "Failed to create struct." << endl;
-        exit(1);
+        shutdown();
     }
 }
 
@@ -229,7 +227,7 @@ void DynProf::start() {
         // TODO(peter): handle entry points other than main().
         // app->getThreads()
         cerr << "Multithreading is not yet handled." << endl;
-        exit(1);
+        shutdown();
     }
     cerr << "Resuming execution" << endl;
     static_cast<BPatch_process*>(app)->continueExecution();
@@ -244,7 +242,7 @@ void DynProf::setupBinary() {
 void DynProf::doSetup() {
     if (!app) {
         cerr << "Failed to load " << *path << endl;
-        exit(1);
+        shutdown();
     }
     create_structs();
     find_funcs();
@@ -301,6 +299,14 @@ void DynProf::ExitCallback(BPatch_thread* /*unused*/, BPatch_exitType exit_type)
         return;
     }
     printElapsedTime();
+}
+
+void DynProf::shutdown() {
+    BPatch_process* proc = dynamic_cast<BPatch_process*>(app);
+    if(proc) {
+        proc->terminateExecution();
+    }
+    exit(1);
 }
 
 // Needed for the ExitCallback
