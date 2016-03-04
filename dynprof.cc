@@ -58,27 +58,27 @@ void DynProf::enum_subroutines(BPatch_function* func) {
     }
 }
 
-BPatch_function* DynProf::get_entry_point() {
+BPatch_function* DynProf::get_function(string name) {
     unique_ptr<vector<BPatch_function*>> funcs(new vector<BPatch_function*>);
     // Should only return one function.
-    app->getImage()->findFunction(DEFAULT_ENTRY_POINT, *funcs);
+    app->getImage()->findFunction(name.c_str(), *funcs);
     if (funcs->size() != 1) {
-        cerr << "Failed to find exactly one entry point for: " DEFAULT_ENTRY_POINT << endl;
+        cerr << "Failed to find exactly one match for: " << name << endl;
         shutdown();
     }
     return funcs->at(0);
 }
 
 void DynProf::hook_functions() {
-    BPatch_function* func = get_entry_point();
-    cerr << "func:" << func->getName() << endl;
+    BPatch_function* func = get_function(DEFAULT_ENTRY_POINT);
+    cerr << "entry point:" << func->getName() << endl;
     enum_subroutines(func);
-    registerCleanupSnippet(func);
+    registerCleanupSnippet();
 }
 
 bool DynProf::createBeforeSnippet(BPatch_function* func) {
-    unique_ptr<vector<BPatch_point*>> entry_point(func->findPoint(BPatch_entry));
-    if (!entry_point || entry_point->size() != 1) {
+    unique_ptr<vector<BPatch_point*>> entry_points(func->findPoint(BPatch_entry));
+    if (!entry_points || entry_points->size() == 0) {
         cerr << "Could not find entry point for " << func->getName() << endl;
         return false;
     }
@@ -100,13 +100,15 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
 
     vector<BPatch_snippet*> entry_vec{&incCount, &entry_snippet, &before_record};
     BPatch_sequence entry_seq(entry_vec);
-    app->insertSnippet(entry_seq, *entry_point->at(0), BPatch_callBefore);
+    for (auto entry_point : *entry_points) {
+        app->insertSnippet(entry_seq, *entry_point, BPatch_callBefore);
+    }
     return true;
 }
 
 bool DynProf::createAfterSnippet(BPatch_function* func) {
-    unique_ptr<vector<BPatch_point*>> exit_point(func->findPoint(BPatch_exit));
-    if (!exit_point || exit_point->size() != 1) {
+    unique_ptr<vector<BPatch_point*>> exit_points(func->findPoint(BPatch_exit));
+    if (!exit_points || exit_points->size() == 0) {
         cerr << "Could not find exit point for " << func->getName() << endl;
         return false;
     }
@@ -124,14 +126,16 @@ bool DynProf::createAfterSnippet(BPatch_function* func) {
 
     vector<BPatch_snippet*> exit_vec{&exit_snippet, &after_record};
     BPatch_sequence exit_seq(exit_vec);
-    app->insertSnippet(exit_seq, *exit_point->at(0), BPatch_callAfter);
+    for (auto exit_point : *exit_points) {
+        app->insertSnippet(exit_seq, *exit_point, BPatch_callAfter);
+    }
     return true;
 }
 
-void DynProf::registerCleanupSnippet(BPatch_function* func) {
-    unique_ptr<vector<BPatch_point*>> exit_point(func->findPoint(BPatch_exit));
-    if (!exit_point || exit_point->size() != 1) {
-        // FIXME: doesn't work with stripped binaries.
+void DynProf::registerCleanupSnippet() {
+    BPatch_function* func = get_function(DEFAULT_ENTRY_POINT);
+    unique_ptr<vector<BPatch_point*>> exit_points(func->findPoint(BPatch_exit));
+    if (!exit_points || exit_points->size() == 0) {
         cerr << "Could not find exit point for " << func->getName() << endl;
         shutdown();
     }
@@ -146,6 +150,7 @@ void DynProf::registerCleanupSnippet(BPatch_function* func) {
             cerr << "Invalid number of components." << endl;
             shutdown();
         }
+        // FIXME: use DynC?
         vector<BPatch_snippet*> exit_args;
         exit_args.push_back(new BPatch_constExpr("%d:%ld:%ld:%s\n"));
         exit_args.push_back(child_func.second->count);
@@ -153,16 +158,26 @@ void DynProf::registerCleanupSnippet(BPatch_function* func) {
         exit_args.push_back(components->at(1));
         exit_args.push_back(new BPatch_constExpr(child_func.first->getName().c_str()));
 
-        snippets.push_back(new BPatch_funcCallExpr(*printf_func, exit_args));
+        // Only print the summary if the function has been called.
+        BPatch_funcCallExpr func_snip(*printf_func, exit_args);
+        BPatch_boolExpr count_expr(BPatch_ne, *child_func.second->count, BPatch_constExpr(0));
+        snippets.push_back(new BPatch_ifExpr(count_expr, func_snip));
     }
     BPatch_sequence exit_snippet(snippets);
 
-    if (!app->insertSnippet(exit_snippet, *exit_point->at(0), BPatch_callAfter)) {
+    app->beginInsertionSet();
+    // FIXME: handle other methods of exiting.
+    // Handle return from main.
+    for (auto exit_point : *exit_points) {
+        app->insertSnippet(exit_snippet, *exit_point, BPatch_callAfter);
+    }
+    if (!app->finalizeInsertionSet(true)) {
         cerr << "Failed to insert cleanup snippets" << endl;
     }
 }
 
 void DynProf::createSnippets(BPatch_function* func) {
+    // FIXME: do one insertion set for all the snippets?
     app->beginInsertionSet();
 
     if (!createBeforeSnippet(func) || !createAfterSnippet(func)) {

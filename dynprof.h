@@ -80,7 +80,7 @@ class DynProf {
     BPatch_function* printf_func;
     BPatch bpatch;
     unordered_map<BPatch_function*, FuncInfo*> func_map;
-    BPatch_function* get_entry_point();
+    BPatch_function* get_function(string name);
     void hook_functions();
     void create_structs();
     void find_funcs();
@@ -88,7 +88,7 @@ class DynProf {
     void enum_subroutines(BPatch_function* func);
     bool createBeforeSnippet(BPatch_function* func);
     bool createAfterSnippet(BPatch_function* func);
-    void registerCleanupSnippet(BPatch_function* func);
+    void registerCleanupSnippet();
     void createSnippets(BPatch_function* func);
     void recordFunc(BPatch_function* func);
     [[noreturn]] void shutdown();
