@@ -202,13 +202,7 @@ void DynProf::create_structs() {
 }
 
 void DynProf::find_funcs() {
-    vector<BPatch_function*> clock_funcs;
-    app->getImage()->findFunction("clock_gettime", clock_funcs);
-    if (clock_funcs.size() != 1) {
-        cerr << "Could not find clock_gettime" << endl;
-        return;
-    }
-    clock_func = clock_funcs.at(0);
+    clock_func = get_function("clock_gettime");
     // TODO(peter): remove this for final product.
     vector<BPatch_function*> printf_funcs;
     // printf isn't profilable.
