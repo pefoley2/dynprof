@@ -91,27 +91,16 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
         BPatch_assign, *func_map[func]->count,
         BPatch_arithExpr(BPatch_plus, *func_map[func]->count, BPatch_constExpr(1)));
 
-    // TODO(peter): remove this for final product.
-    vector<BPatch_function*> printf_funcs;
-    // printf isn't profilable.
-    app->getImage()->findFunction("printf", printf_funcs, true, true, true);
-    if (printf_funcs.size() != 1) {
-        cerr << "Could not find printf" << endl;
-        return false;
-    }
-
-    BPatch_funcCallExpr entry_snippet(*printf_funcs.at(0), entry_args);
+    BPatch_funcCallExpr entry_snippet(*printf_func, entry_args);
 
     vector<BPatch_snippet*> clock_args;
     clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
     clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map[func]->before));
     BPatch_funcCallExpr before_record(*clock_func, clock_args);
 
-    vector<BPatch_snippet*> entry_vec{&incCount, &entry_snippet};
+    vector<BPatch_snippet*> entry_vec{&incCount, &entry_snippet, &before_record};
     BPatch_sequence entry_seq(entry_vec);
     app->insertSnippet(entry_seq, *entry_point->at(0), BPatch_callBefore);
-    // FIXME: why does this break when added to the same seq as the other snippets?
-    app->insertSnippet(before_record, *entry_point->at(0), BPatch_callBefore);
     return true;
 }
 
@@ -126,25 +115,16 @@ bool DynProf::createAfterSnippet(BPatch_function* func) {
     exit_args.push_back(new BPatch_constExpr("Exiting %s\n"));
     exit_args.push_back(new BPatch_constExpr(func->getName().c_str()));
 
-    // TODO(peter): remove this for final product.
-    vector<BPatch_function*> printf_funcs;
-    // printf isn't profilable.
-    app->getImage()->findFunction("printf", printf_funcs, true, true, true);
-    if (printf_funcs.size() != 1) {
-        cerr << "Could not find printf" << endl;
-        return false;
-    }
-
-    BPatch_funcCallExpr exit_snippet(*printf_funcs.at(0), exit_args);
+    BPatch_funcCallExpr exit_snippet(*printf_func, exit_args);
 
     vector<BPatch_snippet*> clock_args;
     clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
     clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map[func]->after));
     BPatch_funcCallExpr after_record(*clock_func, clock_args);
 
-    app->insertSnippet(exit_snippet, *exit_point->at(0), BPatch_callAfter);
-    // FIXME: why does this break when added to a seq with other snippets?
-    app->insertSnippet(after_record, *exit_point->at(0), BPatch_callAfter);
+    vector<BPatch_snippet*> exit_vec{&exit_snippet, &after_record};
+    BPatch_sequence exit_seq(exit_vec);
+    app->insertSnippet(exit_seq, *exit_point->at(0), BPatch_callAfter);
     return true;
 }
 
@@ -154,15 +134,6 @@ void DynProf::registerCleanupSnippet(BPatch_function* func) {
         // FIXME: doesn't work with stripped binaries.
         cerr << "Could not find exit point for " << func->getName() << endl;
         shutdown();
-    }
-
-    // TODO(peter): remove this for final product.
-    vector<BPatch_function*> printf_funcs;
-    // printf isn't profilable.
-    app->getImage()->findFunction("printf", printf_funcs, true, true, true);
-    if (printf_funcs.size() != 1) {
-        cerr << "Could not find printf" << endl;
-        return;
     }
 
     vector<BPatch_snippet*> snippets;
@@ -182,7 +153,7 @@ void DynProf::registerCleanupSnippet(BPatch_function* func) {
         exit_args.push_back(components->at(1));
         exit_args.push_back(new BPatch_constExpr(child_func.first->getName().c_str()));
 
-        snippets.push_back(new BPatch_funcCallExpr(*printf_funcs.at(0), exit_args));
+        snippets.push_back(new BPatch_funcCallExpr(*printf_func, exit_args));
     }
     BPatch_sequence exit_snippet(snippets);
 
@@ -223,6 +194,15 @@ void DynProf::find_funcs() {
         return;
     }
     clock_func = clock_funcs.at(0);
+    // TODO(peter): remove this for final product.
+    vector<BPatch_function*> printf_funcs;
+    // printf isn't profilable.
+    app->getImage()->findFunction("printf", printf_funcs, true, true, true);
+    if (printf_funcs.size() != 1) {
+        cerr << "Could not find printf" << endl;
+        return;
+    }
+    printf_func = printf_funcs.at(0);
 }
 
 void DynProf::start() {

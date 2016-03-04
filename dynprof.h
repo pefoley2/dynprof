@@ -57,6 +57,7 @@ class DynProf {
           app(nullptr),
           timespec_struct(nullptr),
           clock_func(nullptr),
+          printf_func(nullptr),
           bpatch(),
           func_map() {
         size_t offset = path->rfind("/");
@@ -76,6 +77,7 @@ class DynProf {
     BPatch_addressSpace* app;
     BPatch_type* timespec_struct;
     BPatch_function* clock_func;
+    BPatch_function* printf_func;
     BPatch bpatch;
     unordered_map<BPatch_function*, FuncInfo*> func_map;
     BPatch_function* get_entry_point();
