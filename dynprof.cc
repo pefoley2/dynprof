@@ -133,13 +133,6 @@ bool DynProf::createAfterSnippet(BPatch_function* func) {
 }
 
 void DynProf::registerCleanupSnippet() {
-    BPatch_function* func = get_function(DEFAULT_ENTRY_POINT);
-    unique_ptr<vector<BPatch_point*>> exit_points(func->findPoint(BPatch_exit));
-    if (!exit_points || exit_points->size() == 0) {
-        cerr << "Could not find exit point for " << func->getName() << endl;
-        shutdown();
-    }
-
     vector<BPatch_snippet*> snippets;
     for (auto& child_func : func_map) {
         if (child_func.first->getName() == DEFAULT_ENTRY_POINT) {
@@ -165,14 +158,14 @@ void DynProf::registerCleanupSnippet() {
     }
     BPatch_sequence exit_snippet(snippets);
 
-    app->beginInsertionSet();
-    // FIXME: handle other methods of exiting.
-    // Handle return from main.
-    for (auto exit_point : *exit_points) {
-        app->insertSnippet(exit_snippet, *exit_point, BPatch_callAfter);
-    }
-    if (!app->finalizeInsertionSet(true)) {
-        cerr << "Failed to insert cleanup snippets" << endl;
+    vector<BPatch_object*> objects;
+    app->getImage()->getObjects(objects);
+    for (auto obj : objects) {
+        if (obj->pathName() != *path) {
+            continue;
+        }
+        // FIXME: doesn't always work
+        obj->insertFiniCallback(exit_snippet);
     }
 }
 
