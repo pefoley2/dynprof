@@ -150,7 +150,7 @@ void DynProf::registerCleanupSnippet() {
         shutdown();
     }
     vector<BPatch_snippet*> atexit_args;
-    atexit_args.push_back(exit_funcs.at(0)->getFunctionRef());
+    atexit_args.push_back(new BPatch_constExpr(exit_funcs.at(0)->getBaseAddr()));
     BPatch_funcCallExpr atexit_reg(*atexit_func, atexit_args);
 
     BPatch_function* func = get_function(DEFAULT_ENTRY_POINT);
@@ -228,7 +228,7 @@ void DynProf::create_structs() {
 void DynProf::find_funcs() {
     clock_func = get_function("clock_gettime");
     // __cxa_atexit is the actual name of the function atexit calls.
-    atexit_func = get_function("__cxa_atexit", true);
+    atexit_func = get_function("__cxa_atexit");
     // TODO(peter): remove this for final product.
     printf_func = get_function("printf", true);
 }
