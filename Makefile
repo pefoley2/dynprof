@@ -3,8 +3,8 @@ ifeq ($(origin CXX),default)
 CXX = clang++
 endif
 
-CFLAGS := $(strip $(CFLAGS) -fno-exceptions -std=c++11 -march=native -pipe)
-CFLAGS += -Wall -Wextra -Winvalid-pch -Wpedantic -Weffc++
+CFLAGS := $(strip $(CFLAGS) -fno-exceptions -march=native -pipe)
+CFLAGS += -Wall -Wextra -Winvalid-pch -Wpedantic
 ifneq ($(filter clang++,$(CXX)),)
 CFLAGS += -Weverything -Wno-c++98-compat
 endif
@@ -17,32 +17,38 @@ CFLAGS += -ggdb3
 #CFLAGS += -fsanitize=memory
 #CFLAGS += -fsanitize=undefined
 
+CXXFLAGS = $(CFLAGS) -std=c++11 -Weffc++
+
 MAKEFLAGS=rR
 
-LDFLAGS := $(strip $(LDFLAGS) -ldyninstAPI -Wl,-O1 -Wl,--as-needed)
+LDFLAGS := $(strip $(LDFLAGS) -Wl,-O1 -Wl,--as-needed)
 
-all: dynprof example/test example/time
+all: dynprof libdynprof.so example/test example/time
 
 example/%: example/%.cc
-	$(CXX) $(filter-out -fsanitize=%,$(CFLAGS)) -o $@ $<
+	$(CXX) $(filter-out -fsanitize=%,$(CXXFLAGS)) -o $@ $<
 
 %.h.gch: %.h
-	$(CXX) -x c++-header $(CFLAGS) -o $@ $<
+	$(CXX) -x c++-header $(CXXFLAGS) -o $@ $<
 
 dynprof.h: dyninst.h.gch
 
+libdynprof.so: libdynprof.c
+	$(CXX) -xc -std=c11 $(CFLAGS) $(LDFLAGS) -shared -fPIC -o $@ $^
+
 %.o: %.cc dynprof.h
-	$(CXX) $(CFLAGS) -include dyninst.h -c $< -o $@
+	$(CXX) $(CXXFLAGS) -include dyninst.h -c $< -o $@
 
 dynprof: dynprof.o main.o
-	$(CXX) $(CFLAGS) $(LDFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) -ldyninstAPI $(LDFLAGS) -o $@ $^
 
 format:
-	clang-format -i -style="{BasedOnStyle: google, IndentWidth: 4, ColumnLimit: 100}" *.cc *.h example/*.cc
+	clang-format -i -style="{BasedOnStyle: google, IndentWidth: 4, ColumnLimit: 100}" *.c *.cc *.h example/*.cc
 
 analyze:
-	clang++ --analyze $(CFLAGS) -o /dev/null main.cc
-	clang++ --analyze $(CFLAGS) -o /dev/null dynprof.cc
+	clang++ --analyze -xc $(CFLAGS) -o /dev/null libdynprof.c
+	clang++ --analyze $(CXXFLAGS) -o /dev/null main.cc
+	clang++ --analyze $(CXXFLAGS) -o /dev/null dynprof.cc
 
 tidy:
 	test -d work || (mkdir work && cd work && cmake ..)
@@ -61,6 +67,6 @@ run: test_dynprof
 	./test_dynprof
 
 clean:
-	rm -rf *.o dyninst.h.gch dynprof test_dynprof example/test example/time work
+	rm -rf *.o *.so dyninst.h.gch dynprof test_dynprof example/test example/time work
 
 .PHONY: all format analyze tidy test binary run clean

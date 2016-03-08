@@ -7,4 +7,5 @@ example/test
 example/time
 *.swp
 *.o
+libdynprof.so
 test_dynprof
