@@ -19,6 +19,16 @@
 
 #include "dynprof.h"
 
+char* resolve_path(string file) {
+    char resolved_path[PATH_MAX];
+    if (realpath(file.c_str(), resolved_path)) {
+        if (access(resolved_path, F_OK) == 0) {
+            return strdup(resolved_path);
+        }
+    }
+    return nullptr;
+}
+
 void FuncInfo::addChild(BPatch_function* func) { children.push_back(func); }
 
 void DynProf::recordFunc(BPatch_function* func) {
@@ -58,10 +68,10 @@ void DynProf::enum_subroutines(BPatch_function* func) {
     }
 }
 
-BPatch_function* DynProf::get_function(string name) {
+BPatch_function* DynProf::get_function(string name, bool uninstrumentable) {
     unique_ptr<vector<BPatch_function*>> funcs(new vector<BPatch_function*>);
     // Should only return one function.
-    app->getImage()->findFunction(name.c_str(), *funcs);
+    app->getImage()->findFunction(name.c_str(), *funcs, true, true, uninstrumentable);
     if (funcs->size() != 1) {
         cerr << "Failed to find exactly one match for: " << name << endl;
         shutdown();
@@ -133,6 +143,27 @@ bool DynProf::createAfterSnippet(BPatch_function* func) {
 }
 
 void DynProf::registerCleanupSnippet() {
+    vector<BPatch_function*> exit_funcs;
+    helper_library->findFunction("exit_handler", exit_funcs);
+    if (exit_funcs.size() != 1) {
+        cerr << "Could not find exit_handler." << endl;
+        shutdown();
+    }
+    vector<BPatch_snippet*> atexit_args;
+    atexit_args.push_back(exit_funcs.at(0)->getFunctionRef());
+    BPatch_funcCallExpr atexit_reg(*atexit_func, atexit_args);
+
+    BPatch_function* func = get_function(DEFAULT_ENTRY_POINT);
+    unique_ptr<vector<BPatch_point*>> entry_points(func->findPoint(BPatch_entry));
+    if (!entry_points || entry_points->size() == 0) {
+        cerr << "Could not find entry point for " << func->getName() << endl;
+        shutdown();
+    }
+    if (!app->insertSnippet(atexit_reg, *entry_points->at(0), BPatch_callBefore)) {
+        cerr << "Could not insert atexit snippet." << endl;
+        shutdown();
+    }
+
     vector<BPatch_snippet*> snippets;
     for (auto& child_func : func_map) {
         if (child_func.first->getName() == DEFAULT_ENTRY_POINT) {
@@ -196,16 +227,13 @@ void DynProf::create_structs() {
 
 void DynProf::find_funcs() {
     clock_func = get_function("clock_gettime");
+    // __cxa_atexit is the actual name of the function atexit calls.
+    atexit_func = get_function("__cxa_atexit", true);
     // TODO(peter): remove this for final product.
-    vector<BPatch_function*> printf_funcs;
-    // printf isn't profilable.
-    app->getImage()->findFunction("printf", printf_funcs, true, true, true);
-    if (printf_funcs.size() != 1) {
-        cerr << "Could not find printf" << endl;
-        return;
-    }
-    printf_func = printf_funcs.at(0);
+    printf_func = get_function("printf", true);
 }
+
+void DynProf::load_library() { helper_library = app->loadLibrary(resolve_path("libdynprof.so")); }
 
 void DynProf::start() {
     cerr << "Preparing to profile " << *path << endl;
@@ -232,6 +260,7 @@ void DynProf::doSetup() {
         cerr << "Failed to load " << *path << endl;
         shutdown();
     }
+    load_library();
     create_structs();
     find_funcs();
     cerr << "Enumerating functions" << endl;

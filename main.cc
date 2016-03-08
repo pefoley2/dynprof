@@ -40,14 +40,9 @@ unique_ptr<string> get_path(string exe) {
         current = offset + 1;
     } while (offset != string::npos);
 
-    char resolved_path[PATH_MAX];
-    if (realpath(exe.c_str(), resolved_path)) {
-        fullpath->assign(resolved_path);
-        if (access(fullpath->c_str(), F_OK) == 0) {
-            return fullpath;
-        }
-    }
-    return nullptr;
+    fullpath->assign(resolve_path(exe));
+
+    return fullpath;
 }
 
 const char** get_params(vector<string> args) {

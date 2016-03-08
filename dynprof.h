@@ -32,6 +32,8 @@
 #include <chrono>
 #include <unordered_map>
 
+char* resolve_path(string file);
+
 class FuncInfo {
    public:
     FuncInfo(BPatch_variableExpr* _count, BPatch_variableExpr* _before, BPatch_variableExpr* _after)
@@ -58,6 +60,8 @@ class DynProf {
           timespec_struct(nullptr),
           clock_func(nullptr),
           printf_func(nullptr),
+          atexit_func(nullptr),
+          helper_library(nullptr),
           bpatch(),
           func_map() {
         size_t offset = path->rfind("/");
@@ -78,9 +82,12 @@ class DynProf {
     BPatch_type* timespec_struct;
     BPatch_function* clock_func;
     BPatch_function* printf_func;
+    BPatch_function* atexit_func;
+    BPatch_object* helper_library;
     BPatch bpatch;
     unordered_map<BPatch_function*, FuncInfo*> func_map;
-    BPatch_function* get_function(string name);
+    BPatch_function* get_function(string name, bool uninstrumentable = false);
+    void load_library();
     void hook_functions();
     void create_structs();
     void find_funcs();
