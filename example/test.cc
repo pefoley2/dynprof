@@ -1,5 +1,4 @@
-#include <stdio.h>
-#include <unistd.h>
+#include <unistd.h>  // for usleep
 
 void foo(unsigned int);
 void bar(unsigned int);

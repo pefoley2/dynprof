@@ -1,5 +1,6 @@
-#include <time.h>
-#include <stdio.h>
+#include <stdio.h>     // for printf
+#include <time.h>  // for CLOCK_MONOTONIC
+
 int main() {
     struct timespec t;
     clock_gettime(CLOCK_MONOTONIC, &t);

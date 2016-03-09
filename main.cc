@@ -17,7 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include "dynprof.h"
+#include <unistd.h>   // for F_OK
+
+#include "dynprof.h"  // for DynProf
 
 unique_ptr<string> get_path(string exe);
 const char** get_params(vector<string> args);
