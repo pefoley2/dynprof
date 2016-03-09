@@ -6,7 +6,7 @@ sudo: required
 
 compiler:
     - clang
-    - gcc
+      #    - gcc
 
 matrix:
     allow_failures:
@@ -35,5 +35,8 @@ install:
     - test -d $HOME/dyninst/include || make -C $DYNINST/work install
 
 script:
+    - ulimit -c unlimited
     - CFLAGS="-Werror -isystem $HOME/dyninst/include" LDFLAGS="-L$HOME/dyninst/lib" make binary test
+    - find -name core
+    - gdb -q -n -ex bt -batch ./dynprof core
     - ./test_dynprof
