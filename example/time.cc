@@ -1,5 +1,5 @@
-#include <stdio.h>     // for printf
-#include <time.h>  // for CLOCK_MONOTONIC
+#include <stdio.h>  // for printf
+#include <time.h>   // for CLOCK_MONOTONIC
 
 int main() {
     struct timespec t;
