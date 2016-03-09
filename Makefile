@@ -40,7 +40,7 @@ libdynprof.so: libdynprof.c
 	$(CXX) $(CXXFLAGS) -include dyninst.h -c $< -o $@
 
 dynprof: dynprof.o main.o
-	$(CXX) $(CXXFLAGS) -ldyninstAPI $(LDFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) -ldyninstAPI -lsymtabAPI $(LDFLAGS) -o $@ $^
 
 format:
 	clang-format -i -style="{BasedOnStyle: google, IndentWidth: 4, ColumnLimit: 100}" *.c *.cc *.h example/*.cc

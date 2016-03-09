@@ -19,6 +19,8 @@
 
 #include "dynprof.h"
 
+using namespace Dyninst;
+
 char* resolve_path(string file) {
     char resolved_path[PATH_MAX];
     if (realpath(file.c_str(), resolved_path)) {
@@ -229,7 +231,13 @@ void DynProf::find_funcs() {
     printf_func = get_function("printf", true);
 }
 
-void DynProf::load_library() { helper_library = app->loadLibrary(resolve_path("libdynprof.so")); }
+void DynProf::load_library() {
+    if (app->getType() == processType::STATIC_EDITOR) {
+        helper_library = app->loadLibrary("libdynprof.so");
+    } else {
+        helper_library = app->loadLibrary(resolve_path("libdynprof.so"));
+    }
+}
 
 void DynProf::start() {
     cerr << "Preparing to profile " << *path << endl;
@@ -272,8 +280,23 @@ int DynProf::waitForExit() {
     return status;
 }
 
+void DynProf::update_rpath() {
+    vector<BPatch_object*> objs;
+    app->getImage()->getObjects(objs);
+    SymtabAPI::Symtab* tab = nullptr;
+    for (auto obj : objs) {
+        if (path->compare(obj->pathName()) == 0) {
+            tab = SymtabAPI::convert(obj);
+            break;
+        }
+    }
+    cerr << tab->getObjectType() << endl;
+    // RegionType::RT_DYNAMIC
+}
+
 bool DynProf::writeOutput() {
     string out_file = executable + "_dynprof";
+    update_rpath();
     bool status = static_cast<BPatch_binaryEdit*>(app)->writeFile(out_file.c_str());
     if (status) {
         cerr << "Modified binary written to: " << out_file << endl;
@@ -293,9 +316,8 @@ double DynProf::elapsed_time(struct timespec* before, struct timespec* after) {
 }
 
 void DynProf::shutdown() {
-    BPatch_process* proc = dynamic_cast<BPatch_process*>(app);
-    if (proc) {
-        proc->terminateExecution();
+    if (app->getType() == processType::TRADITIONAL_PROCESS) {
+        static_cast<BPatch_process*>(app)->terminateExecution();
     }
     exit(1);
 }

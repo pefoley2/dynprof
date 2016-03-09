@@ -20,12 +20,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void register_handler(void);
+void register_handler(void) __attribute__((visibility("default")));
 void exit_handler(void);
 
 void register_handler() {
     if (atexit(exit_handler)) {
-        printf("Failed to register atexit handler.");
+        printf("Failed to register atexit handler.\n");
         exit(1);
     }
 }

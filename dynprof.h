@@ -89,6 +89,7 @@ class DynProf {
     void hook_functions();
     void create_structs();
     void find_funcs();
+    void update_rpath();
     void doSetup();
     void enum_subroutines(BPatch_function* func);
     bool createBeforeSnippet(BPatch_function* func);
