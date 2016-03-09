@@ -53,7 +53,7 @@ analyze:
 tidy:
 	test -d work || (mkdir work && cd work && cmake ..)
 	make -C work
-	clang-tidy -analyze-temporary-dtors -header-filter='.*' -checks='*,-llvm-header-guard' -p work *.cc
+	clang-tidy -analyze-temporary-dtors -header-filter='.*' -checks='*,-llvm-header-guard' -p work *.cc *.c
 
 test: all
 	./dynprof example/test

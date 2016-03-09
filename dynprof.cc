@@ -19,13 +19,11 @@
 
 #include "dynprof.h"
 
-using namespace Dyninst;
-
-char* resolve_path(string file) {
+string resolve_path(string file) {
     char resolved_path[PATH_MAX];
     if (realpath(file.c_str(), resolved_path)) {
         if (access(resolved_path, F_OK) == 0) {
-            return strdup(resolved_path);
+            return string(resolved_path);
         }
     }
     return nullptr;
@@ -146,7 +144,8 @@ bool DynProf::createAfterSnippet(BPatch_function* func) {
 
 void DynProf::registerCleanupSnippet() {
     vector<BPatch_function*> exit_funcs;
-    helper_library->findFunction("register_handler", exit_funcs);
+    app->loadLibrary(resolve_path(HELPER_LIB).c_str());
+    app->getImage()->findFunction("__dynprof_register_handler", exit_funcs);
     if (exit_funcs.size() != 1) {
         cerr << "Could not find exit_handler." << endl;
         shutdown();
@@ -231,14 +230,6 @@ void DynProf::find_funcs() {
     printf_func = get_function("printf", true);
 }
 
-void DynProf::load_library() {
-    if (app->getType() == processType::STATIC_EDITOR) {
-        helper_library = app->loadLibrary("libdynprof.so");
-    } else {
-        helper_library = app->loadLibrary(resolve_path("libdynprof.so"));
-    }
-}
-
 void DynProf::start() {
     cerr << "Preparing to profile " << *path << endl;
     app = bpatch.processCreate(path->c_str(), params);
@@ -257,6 +248,7 @@ void DynProf::setupBinary() {
     cerr << "Preparing " << *path << " for profiling" << endl;
     app = bpatch.openBinary(path->c_str(), true);
     doSetup();
+    update_needed();
 }
 
 void DynProf::doSetup() {
@@ -264,7 +256,6 @@ void DynProf::doSetup() {
         cerr << "Failed to load " << *path << endl;
         shutdown();
     }
-    load_library();
     create_structs();
     find_funcs();
     cerr << "Enumerating functions" << endl;
@@ -280,23 +271,22 @@ int DynProf::waitForExit() {
     return status;
 }
 
-void DynProf::update_rpath() {
+void DynProf::update_needed() {
+    // We already have a dep to the full path of the helper library,
+    // remove this one so we don't need to set LD_LIBRARY_PATH
     vector<BPatch_object*> objs;
     app->getImage()->getObjects(objs);
-    SymtabAPI::Symtab* tab = nullptr;
     for (auto obj : objs) {
         if (path->compare(obj->pathName()) == 0) {
-            tab = SymtabAPI::convert(obj);
-            break;
+            Dyninst::SymtabAPI::convert(obj)->removeLibraryDependency(HELPER_LIB);
+            return;
         }
     }
-    cerr << tab->getObjectType() << endl;
-    // RegionType::RT_DYNAMIC
+    cerr << "Failed to remove duplicate dep on helper lib." << endl;
 }
 
 bool DynProf::writeOutput() {
     string out_file = executable + "_dynprof";
-    update_rpath();
     bool status = static_cast<BPatch_binaryEdit*>(app)->writeFile(out_file.c_str());
     if (status) {
         cerr << "Modified binary written to: " << out_file << endl;
@@ -316,7 +306,7 @@ double DynProf::elapsed_time(struct timespec* before, struct timespec* after) {
 }
 
 void DynProf::shutdown() {
-    if (app->getType() == processType::TRADITIONAL_PROCESS) {
+    if (app && app->getType() == processType::TRADITIONAL_PROCESS) {
         static_cast<BPatch_process*>(app)->terminateExecution();
     }
     exit(1);
