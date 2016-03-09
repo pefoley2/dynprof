@@ -3,7 +3,7 @@ ifeq ($(origin CXX),default)
 CXX = clang++
 endif
 
-CFLAGS := $(strip $(CFLAGS) -fno-exceptions -march=native -pipe)
+CFLAGS := $(strip $(CFLAGS) -fno-exceptions -fvisibility=hidden -march=native -pipe)
 CFLAGS += -Wall -Wextra -Winvalid-pch -Wpedantic
 ifneq ($(filter clang++,$(CXX)),)
 CFLAGS += -Weverything -Wno-c++98-compat
