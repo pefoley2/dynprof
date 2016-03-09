@@ -144,14 +144,12 @@ bool DynProf::createAfterSnippet(BPatch_function* func) {
 
 void DynProf::registerCleanupSnippet() {
     vector<BPatch_function*> exit_funcs;
-    helper_library->findFunction("exit_handler", exit_funcs);
+    helper_library->findFunction("register_handler", exit_funcs);
     if (exit_funcs.size() != 1) {
         cerr << "Could not find exit_handler." << endl;
         shutdown();
     }
-    vector<BPatch_snippet*> atexit_args;
-    atexit_args.push_back(new BPatch_constExpr(exit_funcs.at(0)->getBaseAddr()));
-    BPatch_funcCallExpr atexit_reg(*atexit_func, atexit_args);
+    BPatch_funcCallExpr atexit_reg(*exit_funcs[0], {});
 
     BPatch_function* func = get_function(DEFAULT_ENTRY_POINT);
     unique_ptr<vector<BPatch_point*>> entry_points(func->findPoint(BPatch_entry));
@@ -227,8 +225,6 @@ void DynProf::create_structs() {
 
 void DynProf::find_funcs() {
     clock_func = get_function("clock_gettime");
-    // __cxa_atexit is the actual name of the function atexit calls.
-    atexit_func = get_function("__cxa_atexit");
     // TODO(peter): remove this for final product.
     printf_func = get_function("printf", true);
 }

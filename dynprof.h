@@ -60,7 +60,6 @@ class DynProf {
           timespec_struct(nullptr),
           clock_func(nullptr),
           printf_func(nullptr),
-          atexit_func(nullptr),
           helper_library(nullptr),
           bpatch(),
           func_map() {
@@ -82,7 +81,6 @@ class DynProf {
     BPatch_type* timespec_struct;
     BPatch_function* clock_func;
     BPatch_function* printf_func;
-    BPatch_function* atexit_func;
     BPatch_object* helper_library;
     BPatch bpatch;
     unordered_map<BPatch_function*, FuncInfo*> func_map;

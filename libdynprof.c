@@ -17,7 +17,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <stdlib.h>
 #include <stdio.h>
 
+void register_handler(void);
 void exit_handler(void);
+
+void register_handler() {
+    if (atexit(exit_handler)) {
+        printf("Failed to register atexit handler.");
+        exit(1);
+    }
+}
 void exit_handler() { printf("memes\n"); }

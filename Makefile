@@ -34,7 +34,7 @@ example/%: example/%.cc
 dynprof.h: dyninst.h.gch
 
 libdynprof.so: libdynprof.c
-	$(CXX) -xc -std=c11 $(CFLAGS) $(LDFLAGS) -shared -fPIC -o $@ $^
+	$(CXX) $(filter-out -fsanitize=%,$(CFLAGS)) $(LDFLAGS) -xc -std=c11 -shared -fPIC -o $@ $^
 
 %.o: %.cc dynprof.h
 	$(CXX) $(CXXFLAGS) -include dyninst.h -c $< -o $@
