@@ -9,6 +9,7 @@ ifneq ($(filter clang++,$(CXX)),)
 CFLAGS += -Weverything -Wno-c++98-compat
 endif
 CFLAGS += -ggdb3
+CFLAGS += -D_GLIBCXX_DEBUG
 #CFLAGS += -O2
 #CFLAGS += -flto
 #CFLAGS += -floop-interchange -floop-strip-mine -floop-block -fgraphite-identity
