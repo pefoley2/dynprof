@@ -147,7 +147,7 @@ void DynProf::registerCleanupSnippet() {
     app->loadLibrary(resolve_path(HELPER_LIB).c_str());
     app->getImage()->findFunction("__dynprof_register_handler", exit_funcs);
     if (exit_funcs.size() != 1) {
-        cerr << "Could not find exit_handler." << endl;
+        cerr << "Could not find handler registration function." << endl;
         shutdown();
     }
     BPatch_funcCallExpr atexit_reg(*exit_funcs[0], {});

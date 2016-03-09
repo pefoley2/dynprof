@@ -20,10 +20,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void __dynprof__register_handler(void) __attribute__((visibility("default")));
+void __dynprof_register_handler(void) __attribute__((visibility("default")));
 void exit_handler(void);
 
-void __dynprof__register_handler() {
+void __dynprof_register_handler() {
     if (atexit(exit_handler)) {
         printf("Failed to register atexit handler.\n");
         exit(1);
