@@ -12,7 +12,7 @@ CFLAGS += -ggdb3
 #CFLAGS += -O2
 #CFLAGS += -flto
 #CFLAGS += -floop-interchange -floop-strip-mine -floop-block -fgraphite-identity
-#CFLAGS += -fsanitize=address
+CFLAGS += -fsanitize=address
 #CFLAGS += -fsanitize=thread
 #CFLAGS += -fsanitize=memory
 #CFLAGS += -fsanitize=undefined
