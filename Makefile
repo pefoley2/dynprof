@@ -61,7 +61,7 @@ test: all
 binary: test_dynprof
 
 test_dynprof: dynprof example/test
-	./dynprof --write example/test
+	-./dynprof --write example/test
 	gdb -q -n -ex bt -batch ./dynprof core
 
 run: test_dynprof
