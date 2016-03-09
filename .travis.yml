@@ -6,7 +6,7 @@ sudo: required
 
 compiler:
     - clang
-      #    - gcc
+    - gcc
 
 matrix:
     allow_failures:
@@ -26,7 +26,7 @@ cache:
 
 before_install:
     - sudo apt-get -qq update
-    - sudo apt-get -y install libiberty-dev libboost-all-dev libelf-dev gdb
+    - sudo apt-get -y install libiberty-dev libboost-all-dev libelf-dev
     - test -d $HOME/dyninst/include || wget -N http://www.paradyn.org/release9.1.0/$DYNINST.tgz
     - test -d $HOME/dyninst/include || tar xf $DYNINST.tgz
 
@@ -35,8 +35,4 @@ install:
     - test -d $HOME/dyninst/include || make -C $DYNINST/work install
 
 script:
-    - ulimit -c unlimited
-    - CFLAGS="-Werror -isystem $HOME/dyninst/include" LDFLAGS="-L$HOME/dyninst/lib" make binary test
-    - find -name core
-    - gdb -q -n -ex bt -batch ./dynprof core
-    - ./test_dynprof
+    - CFLAGS="-Werror -isystem $HOME/dyninst/include" LDFLAGS="-L$HOME/dyninst/lib" make test run

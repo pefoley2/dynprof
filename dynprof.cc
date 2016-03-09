@@ -26,7 +26,7 @@ string resolve_path(string file) {
             return string(resolved_path);
         }
     }
-    return nullptr;
+    return file;
 }
 
 void FuncInfo::addChild(BPatch_function* func) { children.push_back(func); }
