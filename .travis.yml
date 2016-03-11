@@ -26,7 +26,7 @@ cache:
 
 before_install:
     - sudo apt-get -qq update
-    - sudo apt-get -y install libiberty-dev libboost-all-dev libelf-dev
+    - sudo apt-get -y install libiberty-dev libboost-all-dev libelf-dev cmake
     - test -d $HOME/dyninst/include || wget -N http://www.paradyn.org/release9.1.0/$DYNINST.tgz
     - test -d $HOME/dyninst/include || tar xf $DYNINST.tgz
 
