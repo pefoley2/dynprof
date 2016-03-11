@@ -97,9 +97,13 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
     entry_args.push_back(new BPatch_constExpr("Entering %s\n"));
     entry_args.push_back(new BPatch_constExpr(func->getName().c_str()));
 
-    BPatch_arithExpr incCount(
+    // FIXME
+    BPatch_variableExpr* var = app->getImage()->findVariable("run_count");
+    BPatch_arithExpr incCount(BPatch_assign, *var,
+                              BPatch_arithExpr(BPatch_plus, *var, BPatch_constExpr(1)));
+    /*BPatch_arithExpr incCount(
         BPatch_assign, *func_map[func]->count,
-        BPatch_arithExpr(BPatch_plus, *func_map[func]->count, BPatch_constExpr(1)));
+        BPatch_arithExpr(BPatch_plus, *func_map[func]->count, BPatch_constExpr(1)));*/
 
     BPatch_funcCallExpr entry_snippet(*printf_func, entry_args);
 
@@ -144,7 +148,6 @@ bool DynProf::createAfterSnippet(BPatch_function* func) {
 
 void DynProf::registerCleanupSnippet() {
     std::vector<BPatch_function*> exit_funcs;
-    app->loadLibrary(resolve_path(HELPER_LIB).c_str());
     app->getImage()->findFunction("__dynprof_register_handler", exit_funcs);
     if (exit_funcs.size() != 1) {
         std::cerr << "Could not find handler registration function." << std::endl;
@@ -225,6 +228,7 @@ void DynProf::create_structs() {
 }
 
 void DynProf::find_funcs() {
+    app->loadLibrary(resolve_path(HELPER_LIB).c_str());
     clock_func = get_function("clock_gettime");
     // TODO(peter): remove this for final product.
     printf_func = get_function("printf", true);

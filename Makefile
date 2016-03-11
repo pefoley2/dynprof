@@ -33,8 +33,8 @@ example/%: example/%.cc
 
 dynprof.h: dyninst.h.gch
 
-%.so: %.cc
-	$(CXX) $(filter-out -fsanitize=%,$(CXXFLAGS)) $(LDFLAGS) -shared -fPIC -o $@ $^
+%.so: %.cc %.h
+	$(CXX) $(filter-out -fsanitize=%,$(CXXFLAGS)) $(LDFLAGS) -shared -fPIC -o $@ $<
 
 %.o: %.cc dynprof.h
 	$(CXX) $(CXXFLAGS) -include dyninst.h -c $< -o $@

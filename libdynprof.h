@@ -17,14 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include "libdynprof.h"
+#ifndef LIBDYNPROF_H
+#define LIBDYNPROF_H
 
-int run_count;
+#include <cstdlib>
+#include <iostream>
 
-void __dynprof_register_handler() {
-    if (atexit(exit_handler)) {
-        std::cerr << "Failed to register atexit handler." << std::endl;
-        exit(1);
-    }
-}
-void exit_handler() { std::cerr << "run_count:" << run_count << std::endl; }
+void __dynprof_register_handler(void) __attribute__((visibility("default")));
+void exit_handler(void);
+
+extern int run_count __attribute__((visibility("default")));
+
+#endif
