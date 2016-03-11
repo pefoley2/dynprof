@@ -33,7 +33,7 @@ before_install:
 install:
     - test -d $HOME/dyninst/include || (mkdir $DYNINST/work; cd $DYNINST/work; cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/dyninst -DCMAKE_C_COMPILER=gcc
       -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" -DUSE_GNU_DEMANGLER=1)
-    - test -d $HOME/dyninst/include || make -j`nproc` -C work install
+    - test -d $HOME/dyninst/include || make -j3 -C $DYNINST/work install
 
 script:
     - CXXFLAGS="-Werror -isystem $HOME/dyninst/include" LDFLAGS="-L$HOME/dyninst/lib" make test run
