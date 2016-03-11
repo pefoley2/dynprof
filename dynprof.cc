@@ -19,11 +19,11 @@
 
 #include "dynprof.h"
 
-string resolve_path(string file) {
+std::string resolve_path(std::string file) {
     char resolved_path[PATH_MAX];
     if (realpath(file.c_str(), resolved_path)) {
         if (access(resolved_path, F_OK) == 0) {
-            return string(resolved_path);
+            return std::string(resolved_path);
         }
     }
     return file;
@@ -35,7 +35,7 @@ void DynProf::recordFunc(BPatch_function* func) {
     BPatch_variableExpr* count = app->malloc(*app->getImage()->findType("int"));
     BPatch_variableExpr* before = app->malloc(*timespec_struct);
     BPatch_variableExpr* after = app->malloc(*timespec_struct);
-    func_map.insert(make_pair(func, new FuncInfo(count, before, after)));
+    func_map.insert(std::make_pair(func, new FuncInfo(count, before, after)));
 }
 
 void DynProf::enum_subroutines(BPatch_function* func) {
@@ -48,7 +48,7 @@ void DynProf::enum_subroutines(BPatch_function* func) {
         // Register entry/exit snippets.
         createSnippets(func);
     }
-    unique_ptr<vector<BPatch_point*>> subroutines(func->findPoint(BPatch_subroutine));
+    std::unique_ptr<std::vector<BPatch_point*>> subroutines(func->findPoint(BPatch_subroutine));
     if (!subroutines) {
         // This function doesn't call any others.
         return;
@@ -60,7 +60,7 @@ void DynProf::enum_subroutines(BPatch_function* func) {
             if (subfunc->isSharedLib()) {
                 // cout << "skip:" << subfunc->getName() << endl;
             } else {
-                cout << "sub:" << subfunc->getName() << endl;
+                std::cout << "sub:" << subfunc->getName() << std::endl;
                 func_map[func]->addChild(subfunc);
                 enum_subroutines(subfunc);
             }
@@ -68,12 +68,12 @@ void DynProf::enum_subroutines(BPatch_function* func) {
     }
 }
 
-BPatch_function* DynProf::get_function(string name, bool uninstrumentable) {
-    unique_ptr<vector<BPatch_function*>> funcs(new vector<BPatch_function*>);
+BPatch_function* DynProf::get_function(std::string name, bool uninstrumentable) {
+    std::unique_ptr<std::vector<BPatch_function*>> funcs(new std::vector<BPatch_function*>);
     // Should only return one function.
     app->getImage()->findFunction(name.c_str(), *funcs, true, true, uninstrumentable);
     if (funcs->size() != 1) {
-        cerr << "Failed to find exactly one match for: " << name << endl;
+        std::cerr << "Failed to find exactly one match for: " << name << std::endl;
         shutdown();
     }
     return funcs->at(0);
@@ -81,19 +81,19 @@ BPatch_function* DynProf::get_function(string name, bool uninstrumentable) {
 
 void DynProf::hook_functions() {
     BPatch_function* func = get_function(DEFAULT_ENTRY_POINT);
-    cerr << "entry point:" << func->getName() << endl;
+    std::cerr << "entry point:" << func->getName() << std::endl;
     enum_subroutines(func);
     registerCleanupSnippet();
 }
 
 bool DynProf::createBeforeSnippet(BPatch_function* func) {
-    unique_ptr<vector<BPatch_point*>> entry_points(func->findPoint(BPatch_entry));
+    std::unique_ptr<std::vector<BPatch_point*>> entry_points(func->findPoint(BPatch_entry));
     if (!entry_points || entry_points->size() == 0) {
-        cerr << "Could not find entry point for " << func->getName() << endl;
+        std::cerr << "Could not find entry point for " << func->getName() << std::endl;
         return false;
     }
 
-    vector<BPatch_snippet*> entry_args;
+    std::vector<BPatch_snippet*> entry_args;
     entry_args.push_back(new BPatch_constExpr("Entering %s\n"));
     entry_args.push_back(new BPatch_constExpr(func->getName().c_str()));
 
@@ -103,12 +103,12 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
 
     BPatch_funcCallExpr entry_snippet(*printf_func, entry_args);
 
-    vector<BPatch_snippet*> clock_args;
+    std::vector<BPatch_snippet*> clock_args;
     clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
     clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map[func]->before));
     BPatch_funcCallExpr before_record(*clock_func, clock_args);
 
-    vector<BPatch_snippet*> entry_vec{&incCount, &entry_snippet, &before_record};
+    std::vector<BPatch_snippet*> entry_vec{&incCount, &entry_snippet, &before_record};
     BPatch_sequence entry_seq(entry_vec);
     for (auto entry_point : *entry_points) {
         app->insertSnippet(entry_seq, *entry_point, BPatch_callBefore);
@@ -117,24 +117,24 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
 }
 
 bool DynProf::createAfterSnippet(BPatch_function* func) {
-    unique_ptr<vector<BPatch_point*>> exit_points(func->findPoint(BPatch_exit));
+    std::unique_ptr<std::vector<BPatch_point*>> exit_points(func->findPoint(BPatch_exit));
     if (!exit_points || exit_points->size() == 0) {
-        cerr << "Could not find exit point for " << func->getName() << endl;
+        std::cerr << "Could not find exit point for " << func->getName() << std::endl;
         return false;
     }
 
-    vector<BPatch_snippet*> exit_args;
+    std::vector<BPatch_snippet*> exit_args;
     exit_args.push_back(new BPatch_constExpr("Exiting %s\n"));
     exit_args.push_back(new BPatch_constExpr(func->getName().c_str()));
 
     BPatch_funcCallExpr exit_snippet(*printf_func, exit_args);
 
-    vector<BPatch_snippet*> clock_args;
+    std::vector<BPatch_snippet*> clock_args;
     clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
     clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map[func]->after));
     BPatch_funcCallExpr after_record(*clock_func, clock_args);
 
-    vector<BPatch_snippet*> exit_vec{&exit_snippet, &after_record};
+    std::vector<BPatch_snippet*> exit_vec{&exit_snippet, &after_record};
     BPatch_sequence exit_seq(exit_vec);
     for (auto exit_point : *exit_points) {
         app->insertSnippet(exit_seq, *exit_point, BPatch_callAfter);
@@ -143,38 +143,38 @@ bool DynProf::createAfterSnippet(BPatch_function* func) {
 }
 
 void DynProf::registerCleanupSnippet() {
-    vector<BPatch_function*> exit_funcs;
+    std::vector<BPatch_function*> exit_funcs;
     app->loadLibrary(resolve_path(HELPER_LIB).c_str());
     app->getImage()->findFunction("__dynprof_register_handler", exit_funcs);
     if (exit_funcs.size() != 1) {
-        cerr << "Could not find handler registration function." << endl;
+        std::cerr << "Could not find handler registration function." << std::endl;
         shutdown();
     }
     BPatch_funcCallExpr atexit_reg(*exit_funcs[0], {});
 
     BPatch_function* func = get_function(DEFAULT_ENTRY_POINT);
-    unique_ptr<vector<BPatch_point*>> entry_points(func->findPoint(BPatch_entry));
+    std::unique_ptr<std::vector<BPatch_point*>> entry_points(func->findPoint(BPatch_entry));
     if (!entry_points || entry_points->size() == 0) {
-        cerr << "Could not find entry point for " << func->getName() << endl;
+        std::cerr << "Could not find entry point for " << func->getName() << std::endl;
         shutdown();
     }
     if (!app->insertSnippet(atexit_reg, *entry_points->at(0), BPatch_callBefore)) {
-        cerr << "Could not insert atexit snippet." << endl;
+        std::cerr << "Could not insert atexit snippet." << std::endl;
         shutdown();
     }
 
-    vector<BPatch_snippet*> snippets;
+    std::vector<BPatch_snippet*> snippets;
     for (auto& child_func : func_map) {
         if (child_func.first->getName() == DEFAULT_ENTRY_POINT) {
             continue;
         }
-        vector<BPatch_variableExpr*>* components = child_func.second->before->getComponents();
+        std::vector<BPatch_variableExpr*>* components = child_func.second->before->getComponents();
         if (components->size() != 2) {
-            cerr << "Invalid number of components." << endl;
+            std::cerr << "Invalid number of components." << std::endl;
             shutdown();
         }
         // FIXME: use DynC?
-        vector<BPatch_snippet*> exit_args;
+        std::vector<BPatch_snippet*> exit_args;
         exit_args.push_back(new BPatch_constExpr("%d:%ld:%ld:%s\n"));
         exit_args.push_back(child_func.second->count);
         exit_args.push_back(components->at(0));
@@ -188,7 +188,7 @@ void DynProf::registerCleanupSnippet() {
     }
     BPatch_sequence exit_snippet(snippets);
 
-    vector<BPatch_object*> objects;
+    std::vector<BPatch_object*> objects;
     app->getImage()->getObjects(objects);
     for (auto obj : objects) {
         if (obj->pathName() != *path) {
@@ -208,18 +208,18 @@ void DynProf::createSnippets(BPatch_function* func) {
     }
 
     if (!app->finalizeInsertionSet(true)) {
-        cerr << "Failed to insert snippets around " << func->getName() << endl;
+        std::cerr << "Failed to insert snippets around " << func->getName() << std::endl;
     }
 }
 
 void DynProf::create_structs() {
-    vector<char*> field_names{const_cast<char*>("tv_sec"), const_cast<char*>("tv_nsec")};
-    vector<BPatch_type*> field_types{
+    std::vector<char*> field_names{const_cast<char*>("tv_sec"), const_cast<char*>("tv_nsec")};
+    std::vector<BPatch_type*> field_types{
         app->getImage()->findType("long"),  // time_t is ultimately a typedef to long
         app->getImage()->findType("long")};
     timespec_struct = bpatch.createStruct("timespec", field_names, field_types);
     if (!timespec_struct) {
-        cerr << "Failed to create struct." << endl;
+        std::cerr << "Failed to create struct." << std::endl;
         shutdown();
     }
 }
@@ -231,21 +231,21 @@ void DynProf::find_funcs() {
 }
 
 void DynProf::start() {
-    cerr << "Preparing to profile " << *path << endl;
+    std::cerr << "Preparing to profile " << *path << std::endl;
     app = bpatch.processCreate(path->c_str(), params);
     doSetup();
     if (static_cast<BPatch_process*>(app)->isMultithreadCapable()) {
         // TODO(peter): handle entry points other than main().
         // app->getThreads()
-        cerr << "Multithreading is not yet handled." << endl;
+        std::cerr << "Multithreading is not yet handled." << std::endl;
         shutdown();
     }
-    cerr << "Resuming execution" << endl;
+    std::cerr << "Resuming execution" << std::endl;
     static_cast<BPatch_process*>(app)->continueExecution();
 }
 
 void DynProf::setupBinary() {
-    cerr << "Preparing " << *path << " for profiling" << endl;
+    std::cerr << "Preparing " << *path << " for profiling" << std::endl;
     app = bpatch.openBinary(path->c_str(), true);
     doSetup();
     update_needed();
@@ -253,12 +253,12 @@ void DynProf::setupBinary() {
 
 void DynProf::doSetup() {
     if (!app) {
-        cerr << "Failed to load " << *path << endl;
+        std::cerr << "Failed to load " << *path << std::endl;
         shutdown();
     }
     create_structs();
     find_funcs();
-    cerr << "Enumerating functions" << endl;
+    std::cerr << "Enumerating functions" << std::endl;
     hook_functions();
 }
 
@@ -267,14 +267,14 @@ int DynProf::waitForExit() {
         bpatch.waitForStatusChange();
     }
     int status = static_cast<BPatch_process*>(app)->getExitCode();
-    cerr << "Program exited with status: " << status << endl;
+    std::cerr << "Program exited with status: " << status << std::endl;
     return status;
 }
 
 void DynProf::update_needed() {
     // We already have a dep to the full path of the helper library,
     // remove this one so we don't need to set LD_LIBRARY_PATH
-    vector<BPatch_object*> objs;
+    std::vector<BPatch_object*> objs;
     app->getImage()->getObjects(objs);
     for (auto obj : objs) {
         if (path->compare(obj->pathName()) == 0) {
@@ -282,26 +282,26 @@ void DynProf::update_needed() {
             return;
         }
     }
-    cerr << "Failed to remove duplicate dep on helper lib." << endl;
+    std::cerr << "Failed to remove duplicate dep on helper lib." << std::endl;
 }
 
 bool DynProf::writeOutput() {
-    string out_file = executable + "_dynprof";
+    std::string out_file = executable + "_dynprof";
     bool status = static_cast<BPatch_binaryEdit*>(app)->writeFile(out_file.c_str());
     if (status) {
-        cerr << "Modified binary written to: " << out_file << endl;
+        std::cerr << "Modified binary written to: " << out_file << std::endl;
     } else {
-        cerr << "Failed to write modified binary to: " << out_file << endl;
+        std::cerr << "Failed to write modified binary to: " << out_file << std::endl;
     }
     return !status;
 }
 
 double DynProf::elapsed_time(struct timespec* before, struct timespec* after) {
-    chrono::nanoseconds before_c =
-        chrono::seconds(before->tv_sec) + chrono::nanoseconds(before->tv_nsec);
-    chrono::nanoseconds after_c =
-        chrono::seconds(after->tv_sec) + chrono::nanoseconds(after->tv_nsec);
-    chrono::nanoseconds elapsed = after_c - before_c;
+    std::chrono::nanoseconds before_c =
+        std::chrono::seconds(before->tv_sec) + std::chrono::nanoseconds(before->tv_nsec);
+    std::chrono::nanoseconds after_c =
+        std::chrono::seconds(after->tv_sec) + std::chrono::nanoseconds(after->tv_nsec);
+    std::chrono::nanoseconds elapsed = after_c - before_c;
     return elapsed.count();
 }
 

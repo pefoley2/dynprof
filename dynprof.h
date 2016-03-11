@@ -33,7 +33,7 @@
 #include <chrono>
 #include <unordered_map>
 
-string resolve_path(string file);
+std::string resolve_path(std::string file);
 
 class FuncInfo {
    public:
@@ -45,15 +45,15 @@ class FuncInfo {
     BPatch_variableExpr* const count;
     BPatch_variableExpr* const before;
     BPatch_variableExpr* const after;
-    chrono::nanoseconds elapsed;
+    std::chrono::nanoseconds elapsed;
 
    private:
-    vector<BPatch_function*> children;
+    std::vector<BPatch_function*> children;
 };
 
 class DynProf {
    public:
-    DynProf(unique_ptr<string> _path, const char** _params)
+    DynProf(std::unique_ptr<std::string> _path, const char** _params)
         : path(std::move(_path)),
           params(_params),
           executable(),
@@ -74,16 +74,16 @@ class DynProf {
     bool writeOutput();
 
    private:
-    unique_ptr<string> path;
+    std::unique_ptr<std::string> path;
     const char** params;
-    string executable;
+    std::string executable;
     BPatch_addressSpace* app;
     BPatch_type* timespec_struct;
     BPatch_function* clock_func;
     BPatch_function* printf_func;
     BPatch bpatch;
-    unordered_map<BPatch_function*, FuncInfo*> func_map;
-    BPatch_function* get_function(string name, bool uninstrumentable = false);
+    std::unordered_map<BPatch_function*, FuncInfo*> func_map;
+    BPatch_function* get_function(std::string name, bool uninstrumentable = false);
     void hook_functions();
     void create_structs();
     void find_funcs();

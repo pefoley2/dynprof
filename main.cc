@@ -21,14 +21,14 @@
 
 #include "dynprof.h"  // for DynProf
 
-unique_ptr<string> get_path(string exe);
-const char** get_params(vector<string> args);
+std::unique_ptr<std::string> get_path(std::string exe);
+const char** get_params(std::vector<std::string> args);
 void usage();
 
-unique_ptr<string> get_path(string exe) {
-    unique_ptr<string> path(new string);
+std::unique_ptr<std::string> get_path(std::string exe) {
+    std::unique_ptr<std::string> path(new std::string);
     path->assign(getenv("PATH"));
-    unique_ptr<string> fullpath(new string);
+    std::unique_ptr<std::string> fullpath(new std::string);
     size_t current = 0;
     size_t offset;
     do {
@@ -40,14 +40,14 @@ unique_ptr<string> get_path(string exe) {
             return fullpath;
         }
         current = offset + 1;
-    } while (offset != string::npos);
+    } while (offset != std::string::npos);
 
     fullpath->assign(resolve_path(exe));
 
     return fullpath;
 }
 
-const char** get_params(vector<string> args) {
+const char** get_params(std::vector<std::string> args) {
     char** params = static_cast<char**>(malloc((args.size() + 1) * sizeof(char*)));
     // Skip the exe, that's resolved by get_path
     for (size_t i = 1; i < args.size(); i++) {
@@ -60,14 +60,14 @@ const char** get_params(vector<string> args) {
     return const_cast<const char**>(params);
 }
 
-void usage() { cerr << "Usage: ./dynprof (--write) [program] arg1,arg2,arg3..." << endl; }
+void usage() { std::cerr << "Usage: ./dynprof (--write) [program] arg1,arg2,arg3..." << std::endl; }
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         usage();
         return 1;
     }
-    vector<string> args(argv, argv + argc);
+    std::vector<std::string> args(argv, argv + argc);
     bool binary_edit = false;
     if (args[1] == "--write") {
         if (argc < 3) {
@@ -77,9 +77,9 @@ int main(int argc, char* argv[]) {
         binary_edit = true;
         args.erase(args.begin());
     }
-    unique_ptr<string> path = get_path(args[1]);
+    std::unique_ptr<std::string> path = get_path(args[1]);
     if (!path) {
-        cerr << args[1] << " not found in path" << endl;
+        std::cerr << args[1] << " not found in path" << std::endl;
         return 1;
     }
     args.erase(args.begin());
