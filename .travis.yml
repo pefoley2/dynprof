@@ -35,4 +35,4 @@ install:
     - test -d $HOME/dyninst/include || make -C $DYNINST/work install
 
 script:
-    - CFLAGS="-Werror -isystem $HOME/dyninst/include" LDFLAGS="-L$HOME/dyninst/lib" make test run
+    - CXXFLAGS="-Werror -isystem $HOME/dyninst/include" LDFLAGS="-L$HOME/dyninst/lib" make test run
