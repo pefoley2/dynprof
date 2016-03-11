@@ -31,8 +31,8 @@ before_install:
     - test -d $HOME/dyninst/include || tar xf $DYNINST.tgz
 
 install:
-    - test -d $HOME/dyninst/include || (cmake . -DCMAKE_INSTALL_PREFIX=$HOME/dyninst -DCMAKE_C_COMPILER=gcc \
-      -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" -DUSE_GNU_DEMANGLER=1)
+    - test -d $HOME/dyninst/include || cmake . -DCMAKE_INSTALL_PREFIX=$HOME/dyninst -DCMAKE_C_COMPILER=gcc
+      -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" -DUSE_GNU_DEMANGLER=1
     - test -d $HOME/dyninst/include || make -j`nproc` install
 
 script:
