@@ -22,6 +22,9 @@
 
 void __dynprof_register_handler(void) __attribute__((visibility("default")));
 void exit_handler(void);
+extern int run_count;
+
+int run_count __attribute__((visibility("default")));
 
 void __dynprof_register_handler() {
     if (atexit(exit_handler)) {
@@ -29,4 +32,4 @@ void __dynprof_register_handler() {
         exit(1);
     }
 }
-void exit_handler() { printf("memes\n"); }
+void exit_handler() { printf("memes:%d\n", run_count); }

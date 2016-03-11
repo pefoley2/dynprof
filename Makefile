@@ -1,23 +1,23 @@
 ifeq ($(origin CXX),default)
-#CXX = g++
 CXX = clang++
 endif
 
-CFLAGS := $(strip $(CFLAGS) -fno-exceptions -fvisibility=hidden -march=native -pipe)
-CFLAGS += -Wall -Wextra -Winvalid-pch -Wpedantic
-ifneq ($(filter clang++,$(CXX)),)
-CFLAGS += -Weverything -Wno-c++98-compat
-endif
-CFLAGS += -ggdb3
-#CFLAGS += -O2
-#CFLAGS += -flto
-#CFLAGS += -floop-interchange -floop-strip-mine -floop-block -fgraphite-identity
-#CFLAGS += -fsanitize=address
-#CFLAGS += -fsanitize=thread
-#CFLAGS += -fsanitize=memory
-#CFLAGS += -fsanitize=undefined
+CXXFLAGS := $(strip $(CXXFLAGS) -fno-exceptions -fvisibility=hidden -march=native -pipe)
+CXXFLAGS += -Wall -Wextra -Winvalid-pch -Wpedantic -Weffc++
+CXXFLAGS += -std=c++11
 
-CXXFLAGS = $(CFLAGS) -std=c++11 -Weffc++
+ifneq ($(filter clang++,$(CXX)),)
+CXXFLAGS += -Weverything -Wno-c++98-compat
+endif
+
+CXXFLAGS += -ggdb3
+#CXXFLAGS += -O2
+#CXXFLAGS += -flto
+#CXXFLAGS += -floop-interchange -floop-strip-mine -floop-block -fgraphite-identity
+#CXXFLAGS += -fsanitize=address
+#CXXFLAGS += -fsanitize=thread
+#CXXFLAGS += -fsanitize=memory
+#CXXFLAGS += -fsanitize=undefined
 
 MAKEFLAGS=rR
 
@@ -33,8 +33,8 @@ example/%: example/%.cc
 
 dynprof.h: dyninst.h.gch
 
-libdynprof.so: libdynprof.c
-	$(CXX) $(filter-out -fsanitize=%,$(CFLAGS)) $(LDFLAGS) -xc -std=c11 -shared -fPIC -o $@ $^
+%.so: %.cc
+	$(CXX) $(filter-out -fsanitize=%,$(CXXFLAGS)) $(LDFLAGS) -shared -fPIC -o $@ $^
 
 %.o: %.cc dynprof.h
 	$(CXX) $(CXXFLAGS) -include dyninst.h -c $< -o $@
@@ -43,24 +43,25 @@ dynprof: dynprof.o main.o
 	$(CXX) $(CXXFLAGS) -ldyninstAPI -lsymtabAPI $(LDFLAGS) -o $@ $^
 
 format:
-	clang-format -i -style="{BasedOnStyle: google, IndentWidth: 4, ColumnLimit: 100}" *.c *.cc *.h example/*.cc
+	clang-format -i -style="{BasedOnStyle: google, IndentWidth: 4, ColumnLimit: 100}" *.cc *.h example/*.cc
 
 analyze:
-	clang++ --analyze -xc $(CFLAGS) -o /dev/null libdynprof.c
-	clang++ --analyze $(CXXFLAGS) -o /dev/null main.cc
-	clang++ --analyze $(CXXFLAGS) -o /dev/null dynprof.cc
+	@for x in libdynprof.cc main.cc dynprof.cc; do \
+	echo $$x; \
+	clang++ --analyze $(CXXFLAGS) -o /dev/null $$x; \
+	done
 
 tidy:
 	test -d work || (mkdir work && cd work && cmake ..)
 	make -C work
-	clang-tidy -analyze-temporary-dtors -header-filter='.*' -checks='*,-llvm-header-guard' -p work *.cc *.c
+	clang-tidy -analyze-temporary-dtors -header-filter='.*' -checks='*,-llvm-header-guard' -p work *.cc
 
 test: all
 	./dynprof example/test
 
 binary: test_dynprof
 
-test_dynprof: dynprof example/test
+test_dynprof: dynprof libdynprof.so example/test
 	./dynprof --write example/test
 
 run: test_dynprof
