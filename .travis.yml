@@ -35,4 +35,4 @@ install:
     - test -d $HOME/dyninst/include || make -C $DYNINST/work install
 
 script:
-    - CXXFLAGS="-Werror -isystem $HOME/dyninst/include" LDFLAGS="-L$HOME/dyninst/lib" make test run
+    - CXXFLAGS="-Werror -isystem $HOME/dyninst/include -D_GLIBCXX_USE_CXX11_ABI=0" LDFLAGS="-L$HOME/dyninst/lib" make test run
