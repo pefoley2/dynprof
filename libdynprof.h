@@ -25,9 +25,8 @@
 
 #include "dynprof.h"
 
-extern FuncMap *lib_func_map;
-
 void __dynprof_register_handler(void) __attribute__((visibility("default")));
+void copy_func_map(FuncMap* input) __attribute__((visibility("default")));
 void exit_handler(void);
 
 #endif

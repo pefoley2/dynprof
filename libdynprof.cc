@@ -19,17 +19,25 @@
 
 #include "libdynprof.h"
 
-FuncMap *lib_func_map;
+FuncMap& func_map() {
+    static FuncMap* func_map = new FuncMap();
+    return *func_map;
+}
+
+void copy_func_map(FuncMap* input) {
+    func_map().insert(input->begin(), input->end());
+}
+
 
 void __dynprof_register_handler() {
-    lib_func_map = new FuncMap();
     if (atexit(exit_handler)) {
         std::cerr << "Failed to register atexit handler." << std::endl;
         exit(1);
     }
 }
 void exit_handler() {
-    for(auto& func: *lib_func_map) {
+    std::cerr << "memes:" << func_map().size() << endl;
+    for(auto& func: func_map()) {
       std::cerr << "count:" << func.second->count << std::endl;
     }
 }

@@ -29,16 +29,6 @@ std::string resolve_path(std::string file) {
     return file;
 }
 
-// Needed for libdynprof.so
-FuncMap& func_map() {
-    static FuncMap* func_map = new FuncMap();
-    return *func_map;
-}
-
-void output_func_map(FuncMap* output) {
-    output->insert(func_map().begin(), func_map().end());
-}
-
 void FuncInfo::addChild(BPatch_function* func) { children.push_back(func); }
 
 
@@ -173,12 +163,14 @@ void DynProf::registerCleanupSnippet() {
         shutdown();
     }
 
-    BPatch_function* copy_func = get_function("output_func_map");
-    BPatch_variableExpr* output_var = app->getImage()->findVariable("lib_func_map");
-    BPatch_funcCallExpr exit_snippet(*copy_func, {output_var});
+    BPatch_function* copy_func = get_function("copy_func_map");
+    BPatch_function* map_func = get_function("func_map");
+    std::vector<BPatch_snippet*> copy_args;
+    copy_args.push_back(new BPatch_funcCallExpr(*map_func, {}));
+    BPatch_funcCallExpr exit_snippet(*copy_func, copy_args);
 
-    /*
-    std::vector<BPatch_snippet*> snippets;
+
+    /*std::vector<BPatch_snippet*> snippets;
     for (auto& child_func : func_map()) {
         if (child_func.first->getName() == DEFAULT_ENTRY_POINT) {
             continue;
@@ -201,8 +193,7 @@ void DynProf::registerCleanupSnippet() {
         BPatch_boolExpr count_expr(BPatch_ne, *child_func.second->count, BPatch_constExpr(0));
         snippets.push_back(new BPatch_ifExpr(count_expr, func_snip));
     }
-    BPatch_sequence exit_snippet(snippets);
-    */
+    BPatch_sequence exit_snippet(snippets);*/
 
     std::vector<BPatch_object*> objects;
     app->getImage()->getObjects(objects);

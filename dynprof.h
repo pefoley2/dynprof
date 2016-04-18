@@ -33,7 +33,6 @@
 #include <chrono>
 #include <unordered_map>
 
-
 std::string resolve_path(std::string file);
 
 class FuncInfo {
@@ -54,8 +53,7 @@ class FuncInfo {
 
 typedef std::unordered_map<BPatch_function*, FuncInfo*> FuncMap;
 
-FuncMap& func_map();
-void output_func_map(FuncMap* output);
+extern FuncMap& func_map() __attribute__((visibility("default")));
 
 class DynProf {
    public:
