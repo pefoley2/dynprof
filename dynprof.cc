@@ -31,7 +31,6 @@ std::string resolve_path(std::string file) {
 
 void FuncInfo::addChild(BPatch_function* func) { children.push_back(func); }
 
-
 void DynProf::recordFunc(BPatch_function* func) {
     BPatch_variableExpr* count = app->malloc(*app->getImage()->findType("int"));
     BPatch_variableExpr* before = app->malloc(*timespec_struct);
@@ -168,7 +167,6 @@ void DynProf::registerCleanupSnippet() {
     std::vector<BPatch_snippet*> copy_args;
     copy_args.push_back(new BPatch_funcCallExpr(*map_func, {}));
     BPatch_funcCallExpr exit_snippet(*copy_func, copy_args);
-
 
     /*std::vector<BPatch_snippet*> snippets;
     for (auto& child_func : func_map()) {
