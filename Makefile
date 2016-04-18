@@ -2,7 +2,7 @@ ifeq ($(origin CXX),default)
 CXX = clang++
 endif
 
-CXXFLAGS := $(strip $(CXXFLAGS) -fno-exceptions -fvisibility=hidden -march=native -pipe)
+CXXFLAGS := $(strip $(CXXFLAGS) -fno-exceptions -fvisibility=hidden -march=native -pipe -fPIC)
 CXXFLAGS += -Wall -Wextra -Winvalid-pch -Wpedantic -Weffc++ -D_GLIBCXX_USE_CXX11_ABI=0
 CXXFLAGS += -std=c++11
 
@@ -33,8 +33,8 @@ example/%: example/%.cc
 
 dynprof.h: dyninst.h.gch
 
-%.so: %.cc %.h
-	$(CXX) $(filter-out -fsanitize=%,$(CXXFLAGS)) $(LDFLAGS) -shared -fPIC -o $@ $<
+%.so: %.cc %.h dynprof.h
+	$(CXX) $(filter-out -fsanitize=%,$(CXXFLAGS)) -include dyninst.h $(LDFLAGS) -shared -o $@ $<
 
 %.o: %.cc dynprof.h
 	$(CXX) $(CXXFLAGS) -include dyninst.h -c $< -o $@

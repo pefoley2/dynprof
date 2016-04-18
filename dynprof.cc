@@ -29,18 +29,29 @@ std::string resolve_path(std::string file) {
     return file;
 }
 
+// Needed for libdynprof.so
+FuncMap& func_map() {
+    static FuncMap* func_map = new FuncMap();
+    return *func_map;
+}
+
+void output_func_map(FuncMap* output) {
+    output->insert(func_map().begin(), func_map().end());
+}
+
 void FuncInfo::addChild(BPatch_function* func) { children.push_back(func); }
+
 
 void DynProf::recordFunc(BPatch_function* func) {
     BPatch_variableExpr* count = app->malloc(*app->getImage()->findType("int"));
     BPatch_variableExpr* before = app->malloc(*timespec_struct);
     BPatch_variableExpr* after = app->malloc(*timespec_struct);
-    func_map.insert(std::make_pair(func, new FuncInfo(count, before, after)));
+    func_map().insert(std::make_pair(func, new FuncInfo(count, before, after)));
 }
 
 void DynProf::enum_subroutines(BPatch_function* func) {
     // Already visited.
-    if (func_map.count(func)) {
+    if (func_map().count(func)) {
         return;
     }
     recordFunc(func);
@@ -61,7 +72,7 @@ void DynProf::enum_subroutines(BPatch_function* func) {
                 // cout << "skip:" << subfunc->getName() << endl;
             } else {
                 std::cout << "sub:" << subfunc->getName() << std::endl;
-                func_map[func]->addChild(subfunc);
+                func_map()[func]->addChild(subfunc);
                 enum_subroutines(subfunc);
             }
         }
@@ -97,19 +108,15 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
     entry_args.push_back(new BPatch_constExpr("Entering %s\n"));
     entry_args.push_back(new BPatch_constExpr(func->getName().c_str()));
 
-    // FIXME
-    BPatch_variableExpr* var = app->getImage()->findVariable("run_count");
-    BPatch_arithExpr incCount(BPatch_assign, *var,
-                              BPatch_arithExpr(BPatch_plus, *var, BPatch_constExpr(1)));
-    /*BPatch_arithExpr incCount(
-        BPatch_assign, *func_map[func]->count,
-        BPatch_arithExpr(BPatch_plus, *func_map[func]->count, BPatch_constExpr(1)));*/
+    BPatch_arithExpr incCount(
+        BPatch_assign, *func_map()[func]->count,
+        BPatch_arithExpr(BPatch_plus, *func_map()[func]->count, BPatch_constExpr(1)));
 
     BPatch_funcCallExpr entry_snippet(*printf_func, entry_args);
 
     std::vector<BPatch_snippet*> clock_args;
     clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
-    clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map[func]->before));
+    clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map()[func]->before));
     BPatch_funcCallExpr before_record(*clock_func, clock_args);
 
     std::vector<BPatch_snippet*> entry_vec{&incCount, &entry_snippet, &before_record};
@@ -135,7 +142,7 @@ bool DynProf::createAfterSnippet(BPatch_function* func) {
 
     std::vector<BPatch_snippet*> clock_args;
     clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
-    clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map[func]->after));
+    clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map()[func]->after));
     BPatch_funcCallExpr after_record(*clock_func, clock_args);
 
     std::vector<BPatch_snippet*> exit_vec{&exit_snippet, &after_record};
@@ -166,8 +173,13 @@ void DynProf::registerCleanupSnippet() {
         shutdown();
     }
 
+    BPatch_function* copy_func = get_function("output_func_map");
+    BPatch_variableExpr* output_var = app->getImage()->findVariable("lib_func_map");
+    BPatch_funcCallExpr exit_snippet(*copy_func, {output_var});
+
+    /*
     std::vector<BPatch_snippet*> snippets;
-    for (auto& child_func : func_map) {
+    for (auto& child_func : func_map()) {
         if (child_func.first->getName() == DEFAULT_ENTRY_POINT) {
             continue;
         }
@@ -190,6 +202,7 @@ void DynProf::registerCleanupSnippet() {
         snippets.push_back(new BPatch_ifExpr(count_expr, func_snip));
     }
     BPatch_sequence exit_snippet(snippets);
+    */
 
     std::vector<BPatch_object*> objects;
     app->getImage()->getObjects(objects);

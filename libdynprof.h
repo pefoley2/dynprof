@@ -23,9 +23,11 @@
 #include <cstdlib>
 #include <iostream>
 
+#include "dynprof.h"
+
+extern FuncMap *lib_func_map;
+
 void __dynprof_register_handler(void) __attribute__((visibility("default")));
 void exit_handler(void);
-
-extern int run_count __attribute__((visibility("default")));
 
 #endif

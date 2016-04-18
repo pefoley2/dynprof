@@ -33,6 +33,7 @@
 #include <chrono>
 #include <unordered_map>
 
+
 std::string resolve_path(std::string file);
 
 class FuncInfo {
@@ -51,6 +52,11 @@ class FuncInfo {
     std::vector<BPatch_function*> children;
 };
 
+typedef std::unordered_map<BPatch_function*, FuncInfo*> FuncMap;
+
+FuncMap& func_map();
+void output_func_map(FuncMap* output);
+
 class DynProf {
    public:
     DynProf(std::unique_ptr<std::string> _path, const char** _params)
@@ -61,8 +67,7 @@ class DynProf {
           timespec_struct(nullptr),
           clock_func(nullptr),
           printf_func(nullptr),
-          bpatch(),
-          func_map() {
+          bpatch() {
         size_t offset = path->rfind("/");
         executable = path->substr(offset + 1);
     }
@@ -82,21 +87,20 @@ class DynProf {
     BPatch_function* clock_func;
     BPatch_function* printf_func;
     BPatch bpatch;
-    std::unordered_map<BPatch_function*, FuncInfo*> func_map;
-    BPatch_function* get_function(std::string name, bool uninstrumentable = false);
     void hook_functions();
     void create_structs();
     void find_funcs();
     void update_needed();
     void doSetup();
     void enum_subroutines(BPatch_function* func);
-    bool createBeforeSnippet(BPatch_function* func);
-    bool createAfterSnippet(BPatch_function* func);
     void registerCleanupSnippet();
     void createSnippets(BPatch_function* func);
     void recordFunc(BPatch_function* func);
     [[noreturn]] void shutdown();
+    bool createBeforeSnippet(BPatch_function* func);
+    bool createAfterSnippet(BPatch_function* func);
     double elapsed_time(struct timespec* before, struct timespec* after);
+    BPatch_function* get_function(std::string name, bool uninstrumentable = false);
 };
 
 #endif

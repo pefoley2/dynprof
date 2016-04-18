@@ -19,12 +19,17 @@
 
 #include "libdynprof.h"
 
-int run_count;
+FuncMap *lib_func_map;
 
 void __dynprof_register_handler() {
+    lib_func_map = new FuncMap();
     if (atexit(exit_handler)) {
         std::cerr << "Failed to register atexit handler." << std::endl;
         exit(1);
     }
 }
-void exit_handler() { std::cerr << "run_count:" << run_count << std::endl; }
+void exit_handler() {
+    for(auto& func: *lib_func_map) {
+      std::cerr << "count:" << func.second->count << std::endl;
+    }
+}
