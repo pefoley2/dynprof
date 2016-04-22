@@ -26,8 +26,7 @@ void __dynprof_register_handler() {
     }
 }
 void exit_handler() {
-    // FIXME: re-work.
-    std::cerr << "Summary:" << std::endl;
-    std::cerr << "%\tcumulative\tself\t\t\t\tself\ttotal" << std::endl;
-    std::cerr << "time\tseconds\t\tseconds\t\t\tcalls\tTs/call\tTs/call\tname" << std::endl;
+    std::cerr << "Profiling Summary:" << std::endl;
+    std::cerr << "%\tcumulative\tself" << std::endl;
+    std::cerr << "time\tseconds\t\tseconds\t\t\tcalls\tname" << std::endl;
 }

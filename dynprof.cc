@@ -174,7 +174,7 @@ void DynProf::registerCleanupSnippet() {
         }
         // FIXME: use DynC?
         std::vector<BPatch_snippet*> exit_args;
-        exit_args.push_back(new BPatch_constExpr("FOO\tFOO\t\t%ld.%ld\t%d\tFOO\tFOO\t%s\n"));
+        exit_args.push_back(new BPatch_constExpr("FOO\tFOO\t\t%ld.%ld\t%d\t%s\n"));
         exit_args.push_back(components->at(0));
         exit_args.push_back(components->at(1));
         exit_args.push_back(child_func.second->count);
