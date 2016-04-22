@@ -103,7 +103,6 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
         BPatch_assign, *func_map[func]->count,
         BPatch_arithExpr(BPatch_plus, *func_map[func]->count, BPatch_constExpr(1)));
 
-
     std::vector<BPatch_snippet*> clock_args;
     clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
     clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map[func]->before));
@@ -189,7 +188,8 @@ void DynProf::registerCleanupSnippet() {
     BPatch_sequence exit_snippet(snippets);
 
     BPatch_function* handler_func = get_function("exit_handler");
-    std::unique_ptr<std::vector<BPatch_point*>> handler_entry_points(handler_func->findPoint(BPatch_exit));
+    std::unique_ptr<std::vector<BPatch_point*>> handler_entry_points(
+        handler_func->findPoint(BPatch_exit));
     if (!handler_entry_points || handler_entry_points->size() == 0) {
         std::cerr << "Could not find entry point for " << handler_func->getName() << std::endl;
         shutdown();
