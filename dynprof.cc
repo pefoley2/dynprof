@@ -35,12 +35,12 @@ void DynProf::recordFunc(BPatch_function* func) {
     BPatch_variableExpr* count = app->malloc(*app->getImage()->findType("int"));
     BPatch_variableExpr* before = app->malloc(*timespec_struct);
     BPatch_variableExpr* after = app->malloc(*timespec_struct);
-    func_map().insert(std::make_pair(func, new FuncInfo(count, before, after)));
+    func_map.insert(std::make_pair(func, new FuncInfo(count, before, after)));
 }
 
 void DynProf::enum_subroutines(BPatch_function* func) {
     // Already visited.
-    if (func_map().count(func)) {
+    if (func_map.count(func)) {
         return;
     }
     recordFunc(func);
@@ -56,12 +56,12 @@ void DynProf::enum_subroutines(BPatch_function* func) {
     for (auto subroutine : *subroutines) {
         BPatch_function* subfunc = subroutine->getCalledFunction();
         if (subfunc) {
-            // TODO(peter): deal with library functions.
+            // TODO(peter): deal with library functions?
             if (subfunc->isSharedLib()) {
                 // cout << "skip:" << subfunc->getName() << endl;
             } else {
                 std::cout << "sub:" << subfunc->getName() << std::endl;
-                func_map()[func]->addChild(subfunc);
+                func_map[func]->addChild(subfunc);
                 enum_subroutines(subfunc);
             }
         }
@@ -93,19 +93,20 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
         return false;
     }
 
+    // FIXME: remove for release.
     std::vector<BPatch_snippet*> entry_args;
     entry_args.push_back(new BPatch_constExpr("Entering %s\n"));
     entry_args.push_back(new BPatch_constExpr(func->getName().c_str()));
+    BPatch_funcCallExpr entry_snippet(*printf_func, entry_args);
 
     BPatch_arithExpr incCount(
-        BPatch_assign, *func_map()[func]->count,
-        BPatch_arithExpr(BPatch_plus, *func_map()[func]->count, BPatch_constExpr(1)));
+        BPatch_assign, *func_map[func]->count,
+        BPatch_arithExpr(BPatch_plus, *func_map[func]->count, BPatch_constExpr(1)));
 
-    BPatch_funcCallExpr entry_snippet(*printf_func, entry_args);
 
     std::vector<BPatch_snippet*> clock_args;
     clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
-    clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map()[func]->before));
+    clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map[func]->before));
     BPatch_funcCallExpr before_record(*clock_func, clock_args);
 
     std::vector<BPatch_snippet*> entry_vec{&incCount, &entry_snippet, &before_record};
@@ -123,15 +124,15 @@ bool DynProf::createAfterSnippet(BPatch_function* func) {
         return false;
     }
 
+    // FIXME: remove for release.
     std::vector<BPatch_snippet*> exit_args;
     exit_args.push_back(new BPatch_constExpr("Exiting %s\n"));
     exit_args.push_back(new BPatch_constExpr(func->getName().c_str()));
-
     BPatch_funcCallExpr exit_snippet(*printf_func, exit_args);
 
     std::vector<BPatch_snippet*> clock_args;
     clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
-    clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map()[func]->after));
+    clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map[func]->after));
     BPatch_funcCallExpr after_record(*clock_func, clock_args);
 
     std::vector<BPatch_snippet*> exit_vec{&exit_snippet, &after_record};
@@ -162,14 +163,8 @@ void DynProf::registerCleanupSnippet() {
         shutdown();
     }
 
-    BPatch_function* copy_func = get_function("copy_func_map");
-    BPatch_function* map_func = get_function("func_map");
-    std::vector<BPatch_snippet*> copy_args;
-    copy_args.push_back(new BPatch_funcCallExpr(*map_func, {}));
-    BPatch_funcCallExpr exit_snippet(*copy_func, copy_args);
-
-    /*std::vector<BPatch_snippet*> snippets;
-    for (auto& child_func : func_map()) {
+    std::vector<BPatch_snippet*> snippets;
+    for (auto& child_func : func_map) {
         if (child_func.first->getName() == DEFAULT_ENTRY_POINT) {
             continue;
         }
@@ -180,10 +175,10 @@ void DynProf::registerCleanupSnippet() {
         }
         // FIXME: use DynC?
         std::vector<BPatch_snippet*> exit_args;
-        exit_args.push_back(new BPatch_constExpr("%d:%ld:%ld:%s\n"));
-        exit_args.push_back(child_func.second->count);
+        exit_args.push_back(new BPatch_constExpr("FOO\tFOO\t\t%ld.%ld\t%d\tFOO\tFOO\t%s\n"));
         exit_args.push_back(components->at(0));
         exit_args.push_back(components->at(1));
+        exit_args.push_back(child_func.second->count);
         exit_args.push_back(new BPatch_constExpr(child_func.first->getName().c_str()));
 
         // Only print the summary if the function has been called.
@@ -191,16 +186,17 @@ void DynProf::registerCleanupSnippet() {
         BPatch_boolExpr count_expr(BPatch_ne, *child_func.second->count, BPatch_constExpr(0));
         snippets.push_back(new BPatch_ifExpr(count_expr, func_snip));
     }
-    BPatch_sequence exit_snippet(snippets);*/
+    BPatch_sequence exit_snippet(snippets);
 
-    std::vector<BPatch_object*> objects;
-    app->getImage()->getObjects(objects);
-    for (auto obj : objects) {
-        if (obj->pathName() != *path) {
-            continue;
-        }
-        // FIXME: doesn't always work
-        obj->insertFiniCallback(exit_snippet);
+    BPatch_function* handler_func = get_function("exit_handler");
+    std::unique_ptr<std::vector<BPatch_point*>> handler_entry_points(handler_func->findPoint(BPatch_exit));
+    if (!handler_entry_points || handler_entry_points->size() == 0) {
+        std::cerr << "Could not find entry point for " << handler_func->getName() << std::endl;
+        shutdown();
+    }
+    if (!app->insertSnippet(exit_snippet, *handler_entry_points->at(0), BPatch_callAfter)) {
+        std::cerr << "Could not insert summary snippet." << std::endl;
+        shutdown();
     }
 }
 

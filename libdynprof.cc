@@ -19,13 +19,6 @@
 
 #include "libdynprof.h"
 
-FuncMap& func_map() {
-    static FuncMap* func_map = new FuncMap();
-    return *func_map;
-}
-
-void copy_func_map(FuncMap* input) { func_map().insert(input->begin(), input->end()); }
-
 void __dynprof_register_handler() {
     if (atexit(exit_handler)) {
         std::cerr << "Failed to register atexit handler." << std::endl;
@@ -33,8 +26,8 @@ void __dynprof_register_handler() {
     }
 }
 void exit_handler() {
-    std::cerr << "memes:" << func_map().size() << endl;
-    for (auto& func : func_map()) {
-        std::cerr << "count:" << func.second->count << std::endl;
-    }
+    // FIXME: re-work.
+    std::cerr << "Summary:" << std::endl;
+    std::cerr << "%\tcumulative\tself\t\t\t\tself\ttotal" << std::endl;
+    std::cerr << "time\tseconds\t\tseconds\t\t\tcalls\tTs/call\tTs/call\tname" << std::endl;
 }

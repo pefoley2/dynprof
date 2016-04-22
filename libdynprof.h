@@ -23,10 +23,7 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "dynprof.h"
-
 void __dynprof_register_handler(void) __attribute__((visibility("default")));
-void copy_func_map(FuncMap* input) __attribute__((visibility("default")));
 void exit_handler(void);
 
 #endif

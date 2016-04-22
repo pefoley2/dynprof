@@ -14,7 +14,7 @@ CXXFLAGS += -ggdb3
 #CXXFLAGS += -O2
 #CXXFLAGS += -flto
 #CXXFLAGS += -floop-interchange -floop-strip-mine -floop-block -fgraphite-identity
-#CXXFLAGS += -fsanitize=address
+#CXXFLAGS += -fsanitize=address -fno-assume-sane-operator-new
 #CXXFLAGS += -fsanitize=thread
 #CXXFLAGS += -fsanitize=memory
 #CXXFLAGS += -fsanitize=undefined
@@ -33,14 +33,14 @@ example/%: example/%.cc
 
 dynprof.h: dyninst.h.gch
 
-%.so: %.cc %.h dynprof.h
-	$(CXX) $(filter-out -fsanitize=%,$(CXXFLAGS)) -include dyninst.h $(LDFLAGS) -shared -o $@ $<
+%.so: %.cc %.h
+	$(CXX) $(filter-out -fsanitize=%,$(CXXFLAGS)) $(LDFLAGS) -shared -o $@ $<
 
 %.o: %.cc dynprof.h
 	$(CXX) $(CXXFLAGS) -include dyninst.h -c $< -o $@
 
-dynprof: dynprof.o main.o libdynprof.so
-	$(CXX) $(CXXFLAGS) -ldyninstAPI -lsymtabAPI -Wl,-rpath='$$ORIGIN' $(LDFLAGS) -o $@ $^
+dynprof: dynprof.o main.o
+	$(CXX) $(CXXFLAGS) -ldyninstAPI -lsymtabAPI $(LDFLAGS) -o $@ $^
 
 format:
 	clang-format -i -style="{BasedOnStyle: google, IndentWidth: 4, ColumnLimit: 100}" *.cc *.h example/*.cc

@@ -53,8 +53,6 @@ class FuncInfo {
 
 typedef std::unordered_map<BPatch_function*, FuncInfo*> FuncMap;
 
-extern FuncMap& func_map() __attribute__((visibility("default")));
-
 class DynProf {
    public:
     DynProf(std::unique_ptr<std::string> _path, const char** _params)
@@ -65,7 +63,8 @@ class DynProf {
           timespec_struct(nullptr),
           clock_func(nullptr),
           printf_func(nullptr),
-          bpatch() {
+          bpatch(),
+          func_map() {
         size_t offset = path->rfind("/");
         executable = path->substr(offset + 1);
     }
@@ -85,6 +84,7 @@ class DynProf {
     BPatch_function* clock_func;
     BPatch_function* printf_func;
     BPatch bpatch;
+    FuncMap func_map;
     void hook_functions();
     void create_structs();
     void find_funcs();
