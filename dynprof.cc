@@ -73,7 +73,7 @@ BPatch_function* DynProf::get_function(std::string name, bool uninstrumentable) 
     // Should only return one function.
     app->getImage()->findFunction(name.c_str(), *funcs, true, true, uninstrumentable);
     if (funcs->size() != 1) {
-        std::cerr << "Failed to find exactly one match for: " << name << std::endl;
+        std::cerr << "Found " << funcs->size() << " matches for: " << name << std::endl;
         shutdown();
     }
     return funcs->at(0);
@@ -161,32 +161,38 @@ void DynProf::registerCleanupSnippet() {
         std::cerr << "Could not insert atexit snippet." << std::endl;
         shutdown();
     }
+    BPatch_function* elapsed_func = get_function("elapsed_time", true);
+    // FIXME: figure out when to free this.
+    BPatch_variableExpr* elapsed_count = app->malloc(*app->getImage()->findType("double"));
 
     std::vector<BPatch_snippet*> snippets;
     for (auto& child_func : func_map) {
         if (child_func.first->getName() == DEFAULT_ENTRY_POINT) {
             continue;
         }
-        std::vector<BPatch_variableExpr*>* components = child_func.second->before->getComponents();
-        if (components->size() != 2) {
-            std::cerr << "Invalid number of components." << std::endl;
-            shutdown();
-        }
-        // FIXME: use DynC?
+        std::vector<BPatch_snippet*> elapsed_args;
+        elapsed_args.push_back(new BPatch_arithExpr(BPatch_addr, *child_func.second->before));
+        elapsed_args.push_back(new BPatch_arithExpr(BPatch_addr, *child_func.second->after));
+        elapsed_args.push_back(new BPatch_arithExpr(BPatch_addr, *elapsed_count));
+
+        // TODO: use DynC?
         std::vector<BPatch_snippet*> exit_args;
-        exit_args.push_back(new BPatch_constExpr("FOO\tFOO\t\t%ld.%ld\t%d\t%s\n"));
-        exit_args.push_back(components->at(0));
-        exit_args.push_back(components->at(1));
+        exit_args.push_back(new BPatch_constExpr("FOO\tFOO\t\t%f\t%d\t%s\n"));
+        //FIXME: exit_args.push_back(new BPatch_arithExpr(BPatch_deref, *elapsed_count));
         exit_args.push_back(child_func.second->count);
         exit_args.push_back(new BPatch_constExpr(child_func.first->getName().c_str()));
 
         // Only print the summary if the function has been called.
-        BPatch_funcCallExpr func_snip(*printf_func, exit_args);
+        BPatch_funcCallExpr *elapsed_snip = new BPatch_funcCallExpr(*elapsed_func, elapsed_args);
+        BPatch_funcCallExpr *func_snip = new BPatch_funcCallExpr(*printf_func, exit_args);
         BPatch_boolExpr count_expr(BPatch_ne, *child_func.second->count, BPatch_constExpr(0));
-        snippets.push_back(new BPatch_ifExpr(count_expr, func_snip));
+        snippets.push_back(new BPatch_ifExpr(count_expr, BPatch_sequence({elapsed_snip, func_snip})));
     }
     BPatch_sequence exit_snippet(snippets);
 
+    // FIXME: don't wanna re-write libdynprof.so
+    std::cerr << "don't rewrite libdynprof.so" <<std::endl;
+    shutdown();
     BPatch_function* handler_func = get_function("exit_handler");
     std::unique_ptr<std::vector<BPatch_point*>> handler_entry_points(
         handler_func->findPoint(BPatch_exit));
@@ -296,15 +302,6 @@ bool DynProf::writeOutput() {
         std::cerr << "Failed to write modified binary to: " << out_file << std::endl;
     }
     return !status;
-}
-
-double DynProf::elapsed_time(struct timespec* before, struct timespec* after) {
-    std::chrono::nanoseconds before_c =
-        std::chrono::seconds(before->tv_sec) + std::chrono::nanoseconds(before->tv_nsec);
-    std::chrono::nanoseconds after_c =
-        std::chrono::seconds(after->tv_sec) + std::chrono::nanoseconds(after->tv_nsec);
-    std::chrono::nanoseconds elapsed = after_c - before_c;
-    return elapsed.count();
 }
 
 void DynProf::shutdown() {

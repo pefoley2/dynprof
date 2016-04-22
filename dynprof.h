@@ -30,7 +30,6 @@
 #define DEFAULT_ENTRY_POINT "main"
 #define HELPER_LIB "libdynprof.so"
 
-#include <chrono>
 #include <unordered_map>
 
 std::string resolve_path(std::string file);
@@ -38,14 +37,13 @@ std::string resolve_path(std::string file);
 class FuncInfo {
    public:
     FuncInfo(BPatch_variableExpr* _count, BPatch_variableExpr* _before, BPatch_variableExpr* _after)
-        : count(_count), before(_before), after(_after), elapsed(), children() {}
+        : count(_count), before(_before), after(_after), children() {}
     FuncInfo(const FuncInfo&) = delete;
     FuncInfo& operator=(const FuncInfo&) = delete;
     void addChild(BPatch_function* func);
     BPatch_variableExpr* const count;
     BPatch_variableExpr* const before;
     BPatch_variableExpr* const after;
-    std::chrono::nanoseconds elapsed;
 
    private:
     std::vector<BPatch_function*> children;
@@ -97,7 +95,6 @@ class DynProf {
     [[noreturn]] void shutdown();
     bool createBeforeSnippet(BPatch_function* func);
     bool createAfterSnippet(BPatch_function* func);
-    double elapsed_time(struct timespec* before, struct timespec* after);
     BPatch_function* get_function(std::string name, bool uninstrumentable = false);
 };
 

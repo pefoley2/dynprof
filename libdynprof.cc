@@ -19,12 +19,29 @@
 
 #include "libdynprof.h"
 
+using namespace std::chrono;
+
 void __dynprof_register_handler() {
     if (atexit(exit_handler)) {
         std::cerr << "Failed to register atexit handler." << std::endl;
         exit(1);
     }
 }
+
+void elapsed_time(struct timespec* before, struct timespec* after, double* output) {
+    std::cerr << output << std::endl;
+    std::cerr << *output << std::endl;
+    //FIXME: *output = 420.5;
+    /*nanoseconds before_c =
+        seconds(before->tv_sec) + nanoseconds(before->tv_nsec);
+    nanoseconds after_c =
+        seconds(after->tv_sec) + nanoseconds(after->tv_nsec);
+    nanoseconds elapsed = after_c - before_c;
+    double bob = elapsed.count() / duration_cast<nanoseconds>(seconds(1)).count();
+    std::cerr << "foo:" << bob << ":" << elapsed.count() << std::endl;
+    return bob;*/
+}
+
 void exit_handler() {
     std::cerr << "Profiling Summary:" << std::endl;
     std::cerr << "%\tcumulative\tself" << std::endl;
