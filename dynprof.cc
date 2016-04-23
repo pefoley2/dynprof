@@ -191,8 +191,6 @@ void DynProf::registerCleanupSnippet() {
     BPatch_sequence exit_snippet(snippets);
 
     // FIXME: don't wanna re-write libdynprof.so
-    std::cerr << "don't rewrite libdynprof.so" <<std::endl;
-    shutdown();
     BPatch_function* handler_func = get_function("exit_handler");
     std::unique_ptr<std::vector<BPatch_point*>> handler_entry_points(
         handler_func->findPoint(BPatch_exit));
@@ -295,6 +293,8 @@ void DynProf::update_needed() {
 
 bool DynProf::writeOutput() {
     std::string out_file = executable + "_dynprof";
+    std::cerr << "don't rewrite libdynprof.so" <<std::endl;
+    shutdown();
     bool status = static_cast<BPatch_binaryEdit*>(app)->writeFile(out_file.c_str());
     if (status) {
         std::cerr << "Modified binary written to: " << out_file << std::endl;
