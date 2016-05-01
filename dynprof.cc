@@ -176,30 +176,33 @@ void DynProf::registerCleanupSnippet() {
     }
     //BPatch_function* elapsed_func = get_function("elapsed_time", true);
     // FIXME: figure out when to free this.
-    BPatch_variableExpr* elapsed_count = app->malloc(*app->getImage()->findType("double"));
+    //BPatch_variableExpr* elapsed_count = app->malloc(*app->getImage()->findType("double"));
+    BPatch_variableExpr* funcs = app->getImage()->findVariable("funcs");
 
     std::vector<BPatch_snippet*> snippets;
-    for (auto& child_func : func_map) {
-        if (child_func.first->getName() == DEFAULT_ENTRY_POINT) {
+    for (auto it = func_map.begin(); it != func_map.end(); ++it) {
+        long idx = std::distance(it, func_map.begin());
+        if (it->first->getName() == DEFAULT_ENTRY_POINT) {
             continue;
         }
         std::vector<BPatch_snippet*> elapsed_args;
-        elapsed_args.push_back(new BPatch_arithExpr(BPatch_addr, *child_func.second->before));
-        elapsed_args.push_back(new BPatch_arithExpr(BPatch_addr, *child_func.second->after));
-        elapsed_args.push_back(new BPatch_arithExpr(BPatch_addr, *elapsed_count));
+        BPatch_snippet lib_func = BPatch_arithExpr(BPatch_ref, *funcs, BPatch_constExpr(idx));
+        elapsed_args.push_back(new BPatch_arithExpr(BPatch_addr, *it->second->before));
+        elapsed_args.push_back(new BPatch_arithExpr(BPatch_addr, *it->second->after));
+        //elapsed_args.push_back(new BPatch_arithExpr(BPatch_addr, *elapsed_count));
 
         // TODO: use DynC?
         std::vector<BPatch_snippet*> exit_args;
         exit_args.push_back(new BPatch_constExpr("FOO\tFOO\t\t%f\t%d\t%s\n"));
         //FIXME: exit_args.push_back(new BPatch_arithExpr(BPatch_deref, *elapsed_count));
-        exit_args.push_back(child_func.second->count);
-        exit_args.push_back(new BPatch_constExpr(child_func.first->getName().c_str()));
+        exit_args.push_back(it->second->count);
+        exit_args.push_back(new BPatch_constExpr(it->first->getName().c_str()));
 
         // Only print the summary if the function has been called.
         //BPatch_funcCallExpr *elapsed_snip = new BPatch_funcCallExpr(*elapsed_func, elapsed_args);
         // FIXME: should we really be using printf here?
         BPatch_funcCallExpr *func_snip = new BPatch_funcCallExpr(*printf_func, exit_args);
-        BPatch_boolExpr count_expr(BPatch_ne, *child_func.second->count, BPatch_constExpr(0));
+        BPatch_boolExpr count_expr(BPatch_ne, *it->second->count, BPatch_constExpr(0));
         snippets.push_back(new BPatch_ifExpr(count_expr, BPatch_sequence({/*elapsed_snip,*/ func_snip})));
     }
     BPatch_sequence exit_snippet(snippets);
