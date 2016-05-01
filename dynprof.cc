@@ -181,13 +181,13 @@ void DynProf::registerCleanupSnippet() {
     BPatch_arithExpr funcs_addr(BPatch_addr, *funcs);
 
     std::vector<BPatch_snippet*> snippets;
-    for (auto it = func_map.begin(); it != func_map.end(); ++it) {
-        unsigned long idx = static_cast<unsigned long>(std::distance(it, func_map.begin()));
+    unsigned long idx = 0;
+    for (auto it = func_map.begin(); it != func_map.end(); ++it, idx++) {
         if (it->first->getName() == DEFAULT_ENTRY_POINT) {
             continue;
         }
         std::vector<BPatch_snippet*> elapsed_args;
-        BPatch_snippet lib_func = BPatch_arithExpr(BPatch_addr, *(funcs + idx * sizeof(FuncInfo)));
+        BPatch_snippet lib_func = BPatch_arithExpr(BPatch_plus, BPatch_arithExpr(BPatch_addr, *funcs), BPatch_constExpr(idx * sizeof(FuncInfo)));
         elapsed_args.push_back(new BPatch_arithExpr(BPatch_addr, *it->second->before));
         elapsed_args.push_back(new BPatch_arithExpr(BPatch_addr, *it->second->after));
         // elapsed_args.push_back(new BPatch_arithExpr(BPatch_addr, *elapsed_count));
