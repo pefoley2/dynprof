@@ -25,6 +25,10 @@ static int num_funcs;
 static FuncInfo* funcs;
 
 void __dynprof_register_handler(int len) {
+    if(len < 0) {
+        std::cerr << "Invalid number of functions: " << len  << std::endl;
+        exit(1);
+    }
     funcs = new FuncInfo[len];
     if (atexit(exit_handler)) {
         std::cerr << "Failed to register atexit handler." << std::endl;

@@ -162,7 +162,7 @@ void DynProf::registerCleanupSnippet() {
         std::cerr << "Could not find handler registration function." << std::endl;
         shutdown();
     }
-    BPatch_funcCallExpr atexit_reg(*exit_funcs[0], {});
+    BPatch_funcCallExpr atexit_reg(*exit_funcs[0], {new BPatch_constExpr(func_map.size())});
 
     BPatch_function* func = get_function(DEFAULT_ENTRY_POINT);
     std::unique_ptr<std::vector<BPatch_point*>> entry_points(func->findPoint(BPatch_entry));
