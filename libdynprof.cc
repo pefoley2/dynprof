@@ -21,29 +21,39 @@
 
 using namespace std::chrono;
 
-void __dynprof_register_handler() {
+static int num_funcs;
+static FuncInfo* funcs;
+
+void __dynprof_register_handler(int len) {
+    funcs = new FuncInfo[len];
     if (atexit(exit_handler)) {
         std::cerr << "Failed to register atexit handler." << std::endl;
         exit(1);
     }
 }
 
+/*
 void elapsed_time(struct timespec* before, struct timespec* after, double* output) {
     std::cerr << output << std::endl;
     std::cerr << *output << std::endl;
     //FIXME: *output = 420.5;
-    /*nanoseconds before_c =
+    nanoseconds before_c =
         seconds(before->tv_sec) + nanoseconds(before->tv_nsec);
     nanoseconds after_c =
         seconds(after->tv_sec) + nanoseconds(after->tv_nsec);
     nanoseconds elapsed = after_c - before_c;
     double bob = elapsed.count() / duration_cast<nanoseconds>(seconds(1)).count();
     std::cerr << "foo:" << bob << ":" << elapsed.count() << std::endl;
-    return bob;*/
+    return bob;
 }
+*/
 
 void exit_handler() {
     std::cerr << "Profiling Summary:" << std::endl;
     std::cerr << "%\tcumulative\tself" << std::endl;
     std::cerr << "time\tseconds\t\tseconds\t\t\tcalls\tname" << std::endl;
+    for(int i=0; i < num_funcs; i++) {
+        std::cerr << funcs[i] << std::endl;
+    }
+    delete[] funcs;
 }

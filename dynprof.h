@@ -36,6 +36,7 @@ std::string resolve_path(std::string file);
 
 class FuncInfo {
    public:
+    FuncInfo() : count(nullptr), before(nullptr), after(nullptr), children() {}
     FuncInfo(BPatch_variableExpr* _count, BPatch_variableExpr* _before, BPatch_variableExpr* _after)
         : count(_count), before(_before), after(_after), children() {}
     FuncInfo(const FuncInfo&) = delete;
@@ -44,6 +45,7 @@ class FuncInfo {
     BPatch_variableExpr* const count;
     BPatch_variableExpr* const before;
     BPatch_variableExpr* const after;
+    friend std::ostream& operator<<(std::ostream& os, const FuncInfo& info);
 
    private:
     std::vector<BPatch_function*> children;

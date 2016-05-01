@@ -33,7 +33,7 @@ example/%: example/%.cc
 
 dynprof.h: dyninst.h.gch
 
-%.so: %.cc %.h
+%.so: %.cc %.h dynprof.h
 	$(CXX) $(filter-out -fsanitize=%,$(CXXFLAGS)) $(LDFLAGS) -shared -o $@ $<
 
 %.o: %.cc dynprof.h

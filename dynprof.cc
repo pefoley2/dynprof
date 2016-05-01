@@ -19,6 +19,8 @@
 
 #include "dynprof.h"
 
+#define DEBUG 1
+
 std::string resolve_path(std::string file) {
     char resolved_path[PATH_MAX];
     if (realpath(file.c_str(), resolved_path)) {
@@ -30,6 +32,11 @@ std::string resolve_path(std::string file) {
 }
 
 void FuncInfo::addChild(BPatch_function* func) { children.push_back(func); }
+
+std::ostream& operator<< (std::ostream &out, const FuncInfo& info) {
+    out << "children: " << info.children.size();
+    return out;
+}
 
 void DynProf::recordFunc(BPatch_function* func) {
     BPatch_variableExpr* count = app->malloc(*app->getImage()->findType("int"));
@@ -60,7 +67,9 @@ void DynProf::enum_subroutines(BPatch_function* func) {
             if (subfunc->isSharedLib()) {
                 // cout << "skip:" << subfunc->getName() << endl;
             } else {
-                std::cout << "sub:" << subfunc->getName() << std::endl;
+#if DEBUG
+                std::cout << "Visited subroutine " << subfunc->getName() << std::endl;
+#endif
                 func_map[func]->addChild(subfunc);
                 enum_subroutines(subfunc);
             }
@@ -81,7 +90,9 @@ BPatch_function* DynProf::get_function(std::string name, bool uninstrumentable) 
 
 void DynProf::hook_functions() {
     BPatch_function* func = get_function(DEFAULT_ENTRY_POINT);
-    std::cerr << "entry point:" << func->getName() << std::endl;
+#if DEBUG
+    std::cerr << "Found entry point " << func->getName() << std::endl;
+#endif
     enum_subroutines(func);
     registerCleanupSnippet();
 }
@@ -93,22 +104,23 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
         return false;
     }
 
-    // FIXME: remove for release.
+    std::vector<BPatch_snippet*> entry_vec;
+#if DEBUG
     std::vector<BPatch_snippet*> entry_args;
     entry_args.push_back(new BPatch_constExpr("Entering %s\n"));
     entry_args.push_back(new BPatch_constExpr(func->getName().c_str()));
-    BPatch_funcCallExpr entry_snippet(*printf_func, entry_args);
+    entry_vec.push_back(new BPatch_funcCallExpr(*printf_func, entry_args));
+#endif
 
-    BPatch_arithExpr incCount(
+    entry_vec.push_back(new BPatch_arithExpr(
         BPatch_assign, *func_map[func]->count,
-        BPatch_arithExpr(BPatch_plus, *func_map[func]->count, BPatch_constExpr(1)));
+        BPatch_arithExpr(BPatch_plus, *func_map[func]->count, BPatch_constExpr(1))));
 
     std::vector<BPatch_snippet*> clock_args;
     clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
     clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map[func]->before));
-    BPatch_funcCallExpr before_record(*clock_func, clock_args);
+    entry_vec.push_back(new BPatch_funcCallExpr(*clock_func, clock_args));
 
-    std::vector<BPatch_snippet*> entry_vec{&incCount, &entry_snippet, &before_record};
     BPatch_sequence entry_seq(entry_vec);
     for (auto entry_point : *entry_points) {
         app->insertSnippet(entry_seq, *entry_point, BPatch_callBefore);
@@ -123,18 +135,19 @@ bool DynProf::createAfterSnippet(BPatch_function* func) {
         return false;
     }
 
-    // FIXME: remove for release.
+    std::vector<BPatch_snippet*> exit_vec;
+#if DEBUG
     std::vector<BPatch_snippet*> exit_args;
     exit_args.push_back(new BPatch_constExpr("Exiting %s\n"));
     exit_args.push_back(new BPatch_constExpr(func->getName().c_str()));
-    BPatch_funcCallExpr exit_snippet(*printf_func, exit_args);
+    exit_vec.push_back(new BPatch_funcCallExpr(*printf_func, exit_args));
+#endif
 
     std::vector<BPatch_snippet*> clock_args;
     clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
     clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map[func]->after));
-    BPatch_funcCallExpr after_record(*clock_func, clock_args);
+    exit_vec.push_back(new BPatch_funcCallExpr(*clock_func, clock_args));
 
-    std::vector<BPatch_snippet*> exit_vec{&exit_snippet, &after_record};
     BPatch_sequence exit_seq(exit_vec);
     for (auto exit_point : *exit_points) {
         app->insertSnippet(exit_seq, *exit_point, BPatch_callAfter);
@@ -161,7 +174,7 @@ void DynProf::registerCleanupSnippet() {
         std::cerr << "Could not insert atexit snippet." << std::endl;
         shutdown();
     }
-    BPatch_function* elapsed_func = get_function("elapsed_time", true);
+    //BPatch_function* elapsed_func = get_function("elapsed_time", true);
     // FIXME: figure out when to free this.
     BPatch_variableExpr* elapsed_count = app->malloc(*app->getImage()->findType("double"));
 
@@ -183,15 +196,17 @@ void DynProf::registerCleanupSnippet() {
         exit_args.push_back(new BPatch_constExpr(child_func.first->getName().c_str()));
 
         // Only print the summary if the function has been called.
-        BPatch_funcCallExpr *elapsed_snip = new BPatch_funcCallExpr(*elapsed_func, elapsed_args);
+        //BPatch_funcCallExpr *elapsed_snip = new BPatch_funcCallExpr(*elapsed_func, elapsed_args);
+        // FIXME: should we really be using printf here?
         BPatch_funcCallExpr *func_snip = new BPatch_funcCallExpr(*printf_func, exit_args);
         BPatch_boolExpr count_expr(BPatch_ne, *child_func.second->count, BPatch_constExpr(0));
-        snippets.push_back(new BPatch_ifExpr(count_expr, BPatch_sequence({elapsed_snip, func_snip})));
+        snippets.push_back(new BPatch_ifExpr(count_expr, BPatch_sequence({/*elapsed_snip,*/ func_snip})));
     }
     BPatch_sequence exit_snippet(snippets);
 
-    // FIXME: don't wanna re-write libdynprof.so
+    /* FIXME: don't wanna re-write libdynprof.so
     BPatch_function* handler_func = get_function("exit_handler");
+    BPatch_module* lib_mod = handler_func->getModule();
     std::unique_ptr<std::vector<BPatch_point*>> handler_entry_points(
         handler_func->findPoint(BPatch_exit));
     if (!handler_entry_points || handler_entry_points->size() == 0) {
@@ -202,6 +217,7 @@ void DynProf::registerCleanupSnippet() {
         std::cerr << "Could not insert summary snippet." << std::endl;
         shutdown();
     }
+    */
 }
 
 void DynProf::createSnippets(BPatch_function* func) {
@@ -224,7 +240,7 @@ void DynProf::create_structs() {
         app->getImage()->findType("long")};
     timespec_struct = bpatch.createStruct("timespec", field_names, field_types);
     if (!timespec_struct) {
-        std::cerr << "Failed to create struct." << std::endl;
+        std::cerr << "Failed to create struct timespec." << std::endl;
         shutdown();
     }
 }
@@ -232,8 +248,9 @@ void DynProf::create_structs() {
 void DynProf::find_funcs() {
     app->loadLibrary(resolve_path(HELPER_LIB).c_str());
     clock_func = get_function("clock_gettime");
-    // TODO(peter): remove this for final product.
+#if 1 //FIXME: only enable when DEBUG
     printf_func = get_function("printf", true);
+#endif
 }
 
 void DynProf::start() {
@@ -293,8 +310,6 @@ void DynProf::update_needed() {
 
 bool DynProf::writeOutput() {
     std::string out_file = executable + "_dynprof";
-    std::cerr << "don't rewrite libdynprof.so" <<std::endl;
-    shutdown();
     bool status = static_cast<BPatch_binaryEdit*>(app)->writeFile(out_file.c_str());
     if (status) {
         std::cerr << "Modified binary written to: " << out_file << std::endl;
