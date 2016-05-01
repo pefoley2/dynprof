@@ -25,8 +25,8 @@ static int num_funcs;
 static FuncInfo* funcs;
 
 void __dynprof_register_handler(int len) {
-    if(len < 0) {
-        std::cerr << "Invalid number of functions: " << len  << std::endl;
+    if (len < 0) {
+        std::cerr << "Invalid number of functions: " << len << std::endl;
         exit(1);
     }
     funcs = new FuncInfo[len];
@@ -56,7 +56,7 @@ void exit_handler() {
     std::cerr << "Profiling Summary:" << std::endl;
     std::cerr << "%\tcumulative\tself" << std::endl;
     std::cerr << "time\tseconds\t\tseconds\t\t\tcalls\tname" << std::endl;
-    for(int i=0; i < num_funcs; i++) {
+    for (int i = 0; i < num_funcs; i++) {
         std::cerr << funcs[i] << std::endl;
     }
     delete[] funcs;

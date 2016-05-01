@@ -27,7 +27,8 @@
 #include "dynprof.h"
 
 void __dynprof_register_handler(int len) __attribute__((visibility("default")));
-// double elapsed_time(struct timespec* before, struct timespec* after) __attribute__((visibility("default")));
+// double elapsed_time(struct timespec* before, struct timespec* after)
+// __attribute__((visibility("default")));
 void exit_handler(void);
 
 #endif
