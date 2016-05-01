@@ -24,7 +24,18 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "dynprof.h"
+class FuncOutput {
+   public:
+    FuncOutput(): before(0), after(0), name(), count(0) {}
+    FuncOutput(const FuncOutput&) = delete;
+    FuncOutput& operator=(const FuncOutput&) = delete;
+    double before;
+    double after;
+    std::string name;
+    int count;
+    int padding; // FIXME
+    friend std::ostream& operator<<(std::ostream& os, const FuncOutput& func);
+};
 
 void __dynprof_register_handler(int len) __attribute__((visibility("default")));
 // double elapsed_time(struct timespec* before, struct timespec* after)

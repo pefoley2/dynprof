@@ -21,15 +21,16 @@
 
 using namespace std::chrono;
 
-static int num_funcs;
-static FuncInfo* funcs;
+static int num_funcs = 0;
+static FuncOutput* funcs;
 
 void __dynprof_register_handler(int len) {
     if (len < 0) {
         std::cerr << "Invalid number of functions: " << len << std::endl;
         exit(1);
     }
-    funcs = new FuncInfo[len];
+    funcs = new FuncOutput[len];
+    num_funcs = len;
     if (atexit(exit_handler)) {
         std::cerr << "Failed to register atexit handler." << std::endl;
         exit(1);
@@ -51,6 +52,15 @@ void elapsed_time(struct timespec* before, struct timespec* after, double* outpu
     return bob;
 }
 */
+
+std::ostream& operator<<(std::ostream& out, const FuncOutput& info) {
+    out << "name: " << info.name
+        << "count: " << info.count
+        << ", before: " << info.before
+        << ", after: " << info.after;
+    return out;
+}
+
 
 void exit_handler() {
     std::cerr << "Profiling Summary:" << std::endl;

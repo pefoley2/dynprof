@@ -33,11 +33,6 @@ std::string resolve_path(std::string file) {
 
 void FuncInfo::addChild(BPatch_function* func) { children.push_back(func); }
 
-std::ostream& operator<<(std::ostream& out, const FuncInfo& info) {
-    out << "children: " << info.children.size();
-    return out;
-}
-
 void DynProf::recordFunc(BPatch_function* func) {
     BPatch_variableExpr* count = app->malloc(*app->getImage()->findType("int"));
     BPatch_variableExpr* before = app->malloc(*timespec_struct);
@@ -116,6 +111,7 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
         BPatch_assign, *func_map[func]->count,
         BPatch_arithExpr(BPatch_plus, *func_map[func]->count, BPatch_constExpr(1))));
 
+    // FIXME: don't just overwrite previous runs.
     std::vector<BPatch_snippet*> clock_args;
     clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
     clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map[func]->before));
@@ -188,6 +184,8 @@ void DynProf::registerCleanupSnippet() {
         }
         std::vector<BPatch_snippet*> elapsed_args;
         BPatch_snippet lib_func = BPatch_arithExpr(BPatch_plus, BPatch_arithExpr(BPatch_addr, *funcs), BPatch_constExpr(idx * sizeof(FuncInfo)));
+
+        /*
         elapsed_args.push_back(new BPatch_arithExpr(BPatch_addr, *it->second->before));
         elapsed_args.push_back(new BPatch_arithExpr(BPatch_addr, *it->second->after));
         // elapsed_args.push_back(new BPatch_arithExpr(BPatch_addr, *elapsed_count));
@@ -205,7 +203,8 @@ void DynProf::registerCleanupSnippet() {
         BPatch_funcCallExpr* func_snip = new BPatch_funcCallExpr(*printf_func, exit_args);
         BPatch_boolExpr count_expr(BPatch_ne, *it->second->count, BPatch_constExpr(0));
         snippets.push_back(
-            new BPatch_ifExpr(count_expr, BPatch_sequence({/*elapsed_snip,*/ func_snip})));
+            new BPatch_ifExpr(count_expr, BPatch_sequence({elapsed_snip, func_snip})));
+        */
     }
     BPatch_sequence exit_snippet(snippets);
 
