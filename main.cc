@@ -34,6 +34,7 @@ std::unique_ptr<std::string> get_path(std::string exe) {
     do {
         offset = path->find_first_of(":", current);
         fullpath->assign(path->substr(current, offset - current));
+        // TODO(peter): support windows paths?
         fullpath->append("/");
         fullpath->append(exe);
         if (access(fullpath->c_str(), F_OK) == 0) {

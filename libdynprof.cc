@@ -19,7 +19,7 @@
 
 #include "libdynprof.h"
 
-using namespace std::chrono;
+// using std::chrono::nanoseconds;
 
 static int num_funcs = 0;
 static FuncOutput* funcs;
@@ -54,13 +54,10 @@ void elapsed_time(struct timespec* before, struct timespec* after, double* outpu
 */
 
 std::ostream& operator<<(std::ostream& out, const FuncOutput& info) {
-    out << "name: " << info.name
-        << "count: " << info.count
-        << ", before: " << info.before
+    out << "name: " << info.name << "count: " << info.count << ", before: " << info.before
         << ", after: " << info.after;
     return out;
 }
-
 
 void exit_handler() {
     std::cerr << "Profiling Summary:" << std::endl;

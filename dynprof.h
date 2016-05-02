@@ -64,6 +64,7 @@ class DynProf {
           printf_func(nullptr),
           bpatch(),
           func_map() {
+        // TODO(peter): support windows paths?
         size_t offset = path->rfind("/");
         executable = path->substr(offset + 1);
     }

@@ -158,7 +158,8 @@ void DynProf::registerCleanupSnippet() {
         std::cerr << "Could not find handler registration function." << std::endl;
         shutdown();
     }
-    BPatch_funcCallExpr atexit_reg(*exit_funcs[0], {new BPatch_constExpr(func_map.size())});
+    BPatch_constExpr func_size(func_map.size());
+    BPatch_funcCallExpr atexit_reg(*exit_funcs[0], {&func_size});
 
     BPatch_function* func = get_function(DEFAULT_ENTRY_POINT);
     std::unique_ptr<std::vector<BPatch_point*>> entry_points(func->findPoint(BPatch_entry));
@@ -177,13 +178,15 @@ void DynProf::registerCleanupSnippet() {
     BPatch_arithExpr funcs_addr(BPatch_addr, *funcs);
 
     std::vector<BPatch_snippet*> snippets;
-    unsigned long idx = 0;
+    uint64_t idx = 0;
     for (auto it = func_map.begin(); it != func_map.end(); ++it, idx++) {
         if (it->first->getName() == DEFAULT_ENTRY_POINT) {
             continue;
         }
         std::vector<BPatch_snippet*> elapsed_args;
-        BPatch_snippet lib_func = BPatch_arithExpr(BPatch_plus, BPatch_arithExpr(BPatch_addr, *funcs), BPatch_constExpr(idx * sizeof(FuncInfo)));
+        BPatch_snippet lib_func =
+            BPatch_arithExpr(BPatch_plus, BPatch_arithExpr(BPatch_addr, *funcs),
+                             BPatch_constExpr(idx * sizeof(FuncInfo)));
 
         /*
         elapsed_args.push_back(new BPatch_arithExpr(BPatch_addr, *it->second->before));
