@@ -24,20 +24,11 @@
 #include <cstdlib>
 #include <iostream>
 
-class FuncOutput {
-   public:
-    FuncOutput() : before(0), after(0), name(), count(0) {}
-    FuncOutput(const FuncOutput&) = delete;
-    FuncOutput& operator=(const FuncOutput&) = delete;
-    double before;
-    double after;
-    std::string name;
-    int count;
-    int padding;  // FIXME
-    friend std::ostream& operator<<(std::ostream& os, const FuncOutput& func);
-};
+#include "dynprof.h"
 
-void __dynprof_register_handler(int len) __attribute__((visibility("default")));
+std::ostream& operator<<(std::ostream& os, const FuncOutput& func);
+
+void __dynprof_register_handler(size_t len) __attribute__((visibility("default")));
 // double elapsed_time(struct timespec* before, struct timespec* after)
 // __attribute__((visibility("default")));
 void exit_handler(void);

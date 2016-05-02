@@ -21,16 +21,12 @@
 
 // using std::chrono::nanoseconds;
 
-static int num_funcs = 0;
+static size_t num_funcs = 0;
 static FuncOutput* funcs;
 
-void __dynprof_register_handler(int len) {
-    if (len < 0) {
-        std::cerr << "Invalid number of functions: " << len << std::endl;
-        exit(1);
-    }
-    funcs = new FuncOutput[len];
+void __dynprof_register_handler(size_t len) {
     num_funcs = len;
+    funcs = static_cast<FuncOutput*>(calloc(len, sizeof(FuncOutput)));
     if (atexit(exit_handler)) {
         std::cerr << "Failed to register atexit handler." << std::endl;
         exit(1);
@@ -54,7 +50,7 @@ void elapsed_time(struct timespec* before, struct timespec* after, double* outpu
 */
 
 std::ostream& operator<<(std::ostream& out, const FuncOutput& info) {
-    out << "name: " << info.name << "count: " << info.count << ", before: " << info.before
+    out /* FIXME: << "name: " << info.name */ << "count: " << info.count << ", before: " << info.before
         << ", after: " << info.after;
     return out;
 }
@@ -63,8 +59,8 @@ void exit_handler() {
     std::cerr << "Profiling Summary:" << std::endl;
     std::cerr << "%\tcumulative\tself" << std::endl;
     std::cerr << "time\tseconds\t\tseconds\t\t\tcalls\tname" << std::endl;
-    for (int i = 0; i < num_funcs; i++) {
+    for (size_t i = 0; i < num_funcs; i++) {
         std::cerr << funcs[i] << std::endl;
     }
-    delete[] funcs;
+    free(funcs);
 }

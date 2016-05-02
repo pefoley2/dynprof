@@ -34,6 +34,13 @@
 
 std::string resolve_path(std::string file);
 
+struct FuncOutput {
+    double before;
+    double after;
+    char* name;
+    long count;
+};
+
 class FuncInfo {
    public:
     FuncInfo(BPatch_variableExpr* _count, BPatch_variableExpr* _before, BPatch_variableExpr* _after)
@@ -60,6 +67,7 @@ class DynProf {
           executable(),
           app(nullptr),
           timespec_struct(nullptr),
+          output_struct(nullptr),
           clock_func(nullptr),
           printf_func(nullptr),
           bpatch(),
@@ -81,6 +89,7 @@ class DynProf {
     std::string executable;
     BPatch_addressSpace* app;
     BPatch_type* timespec_struct;
+    BPatch_type* output_struct;
     BPatch_function* clock_func;
     BPatch_function* printf_func;
     BPatch bpatch;

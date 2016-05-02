@@ -175,7 +175,12 @@ void DynProf::registerCleanupSnippet() {
     // FIXME: figure out when to free this.
     // BPatch_variableExpr* elapsed_count = app->malloc(*app->getImage()->findType("double"));
     BPatch_variableExpr* funcs = app->getImage()->findVariable("funcs");
-    BPatch_arithExpr funcs_addr(BPatch_addr, *funcs);
+    if(!funcs) {
+        std::cerr << "Could not find function output var." << std::endl;
+        shutdown();
+    }
+    //FuncOutput* func_info = static_cast<FuncOutput*>(funcs->getBaseAddr());
+    //BPatch_arithExpr funcs_addr(BPatch_addr, *funcs);
 
     std::vector<BPatch_snippet*> snippets;
     uint64_t idx = 0;
@@ -183,10 +188,17 @@ void DynProf::registerCleanupSnippet() {
         if (it->first->getName() == DEFAULT_ENTRY_POINT) {
             continue;
         }
-        std::vector<BPatch_snippet*> elapsed_args;
+        /*std::vector<BPatch_snippet*> elapsed_args;
         BPatch_snippet lib_func =
             BPatch_arithExpr(BPatch_plus, BPatch_arithExpr(BPatch_addr, *funcs),
                              BPatch_constExpr(idx * sizeof(FuncInfo)));
+        std::vector<BPatch_variableExpr*> comp = foo.getComponents();*/
+        // count
+        /*funcs->getComponents()->at(1)->writeValue(new BPatch_constExpr(12));
+        funcs->getComponents()->at(2)->writeValue(new BPatch_constExpr(32));
+        funcs->getComponents()->at(3)->writeValue(new BPatch_constExpr("foo"));
+        funcs->getComponents()->at(4)->writeValue(new BPatch_constExpr(42));*/
+        //func_info[idx].count = 42;
 
         /*
         elapsed_args.push_back(new BPatch_arithExpr(BPatch_addr, *it->second->before));
@@ -241,13 +253,24 @@ void DynProf::createSnippets(BPatch_function* func) {
 }
 
 void DynProf::create_structs() {
-    std::vector<char*> field_names{const_cast<char*>("tv_sec"), const_cast<char*>("tv_nsec")};
-    std::vector<BPatch_type*> field_types{
+    std::vector<char*> time_field_names{const_cast<char*>("tv_sec"), const_cast<char*>("tv_nsec")};
+    std::vector<BPatch_type*> time_field_types{
         app->getImage()->findType("long"),  // time_t is ultimately a typedef to long
         app->getImage()->findType("long")};
-    timespec_struct = bpatch.createStruct("timespec", field_names, field_types);
+    timespec_struct = bpatch.createStruct("timespec", time_field_names, time_field_types);
     if (!timespec_struct) {
         std::cerr << "Failed to create struct timespec." << std::endl;
+        shutdown();
+    }
+    std::vector<char*> output_field_names{const_cast<char*>("before"), const_cast<char*>("after"), const_cast<char*>("name"), const_cast<char*>("count")};
+    std::vector<BPatch_type*> output_field_types{
+        app->getImage()->findType("double"),
+        app->getImage()->findType("double"),
+        app->getImage()->findType("char *"),
+        app->getImage()->findType("long")};
+    output_struct = bpatch.createStruct("FuncOutput", output_field_names, output_field_types);
+    if (!output_struct) {
+        std::cerr << "Failed to create struct FuncOutput." << std::endl;
         shutdown();
     }
 }
