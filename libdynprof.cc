@@ -21,12 +21,11 @@
 
 // using std::chrono::nanoseconds;
 
-static size_t num_funcs = 0;
-static FuncOutput* funcs;
+static FuncOutput funcs[MAX_NUM_FUNCS];
 
-void __dynprof_register_handler(size_t len) {
-    num_funcs = len;
-    funcs = static_cast<FuncOutput*>(calloc(len, sizeof(FuncOutput)));
+void __dynprof_register_handler() {
+    // FIXME: needed?
+    memset(funcs, 0, sizeof(FuncOutput) * MAX_NUM_FUNCS);
     if (atexit(exit_handler)) {
         std::cerr << "Failed to register atexit handler." << std::endl;
         exit(1);
@@ -55,11 +54,13 @@ std::ostream& operator<<(std::ostream& out, const FuncOutput& info) {
     return out;
 }
 
+// void copy_func_info(FuncOutput* out) {}
+
 void exit_handler() {
     std::cerr << "Profiling Summary:" << std::endl;
     std::cerr << "%\tcumulative\tself" << std::endl;
     std::cerr << "time\tseconds\t\tseconds\t\t\tcalls\tname" << std::endl;
-    for (size_t i = 0; i < num_funcs; i++) {
+    for (int i = 0; i < MAX_NUM_FUNCS; i++) {
         std::cerr << funcs[i] << std::endl;
     }
     free(funcs);

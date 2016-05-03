@@ -45,6 +45,10 @@ void DynProf::enum_subroutines(BPatch_function* func) {
     if (func_map.count(func)) {
         return;
     }
+    if(func_map.size() >= MAX_NUM_FUNCS) {
+        std::cerr << "DynProf currently only supports profiling up to " << MAX_NUM_FUNCS << " functions." << std::endl;
+        shutdown();
+    }
     recordFunc(func);
     if (func->getName() != DEFAULT_ENTRY_POINT) {
         // Register entry/exit snippets.
@@ -188,6 +192,7 @@ void DynProf::registerCleanupSnippet() {
         if (it->first->getName() == DEFAULT_ENTRY_POINT) {
             continue;
         }
+        BPatch_arithExpr func_out(BPatch_ref, *funcs, BPatch_constExpr(idx));
         /*std::vector<BPatch_snippet*> elapsed_args;
         BPatch_snippet lib_func =
             BPatch_arithExpr(BPatch_plus, BPatch_arithExpr(BPatch_addr, *funcs),
@@ -262,6 +267,7 @@ void DynProf::create_structs() {
         std::cerr << "Failed to create struct timespec." << std::endl;
         shutdown();
     }
+    /*
     std::vector<char*> output_field_names{const_cast<char*>("before"), const_cast<char*>("after"), const_cast<char*>("name"), const_cast<char*>("count")};
     std::vector<BPatch_type*> output_field_types{
         app->getImage()->findType("double"),
@@ -272,7 +278,7 @@ void DynProf::create_structs() {
     if (!output_struct) {
         std::cerr << "Failed to create struct FuncOutput." << std::endl;
         shutdown();
-    }
+    }*/
 }
 
 void DynProf::find_funcs() {

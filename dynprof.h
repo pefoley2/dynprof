@@ -30,6 +30,10 @@
 #define DEFAULT_ENTRY_POINT "main"
 #define HELPER_LIB "libdynprof.so"
 
+// FIXME: make dynamic?
+#define MAX_NUM_FUNCS 1000
+#define MAX_FUNC_NAME 256
+
 #include <unordered_map>
 
 std::string resolve_path(std::string file);
@@ -37,7 +41,7 @@ std::string resolve_path(std::string file);
 struct FuncOutput {
     double before;
     double after;
-    char* name;
+    char name[MAX_FUNC_NAME];
     long count;
 };
 
@@ -67,7 +71,6 @@ class DynProf {
           executable(),
           app(nullptr),
           timespec_struct(nullptr),
-          output_struct(nullptr),
           clock_func(nullptr),
           printf_func(nullptr),
           bpatch(),
@@ -89,7 +92,6 @@ class DynProf {
     std::string executable;
     BPatch_addressSpace* app;
     BPatch_type* timespec_struct;
-    BPatch_type* output_struct;
     BPatch_function* clock_func;
     BPatch_function* printf_func;
     BPatch bpatch;
