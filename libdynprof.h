@@ -29,6 +29,7 @@
 std::ostream& operator<<(std::ostream& os, const FuncOutput& func);
 
 void __dynprof_register_handler() __attribute__((visibility("default")));
+void copy_func_info(int count, FuncOutput* out) __attribute__((visibility("default")));
 // double elapsed_time(struct timespec* before, struct timespec* after)
 // __attribute__((visibility("default")));
 void exit_handler(void);

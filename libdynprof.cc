@@ -25,7 +25,7 @@ static FuncOutput funcs[MAX_NUM_FUNCS];
 
 void __dynprof_register_handler() {
     // FIXME: needed?
-    memset(funcs, 0, sizeof(FuncOutput) * MAX_NUM_FUNCS);
+    //memset(funcs, 0, sizeof(FuncOutput) * MAX_NUM_FUNCS);
     if (atexit(exit_handler)) {
         std::cerr << "Failed to register atexit handler." << std::endl;
         exit(1);
@@ -49,19 +49,23 @@ void elapsed_time(struct timespec* before, struct timespec* after, double* outpu
 */
 
 std::ostream& operator<<(std::ostream& out, const FuncOutput& info) {
-    out /* FIXME: << "name: " << info.name */ << "count: " << info.count << ", before: " << info.before
-        << ", after: " << info.after;
+    out /* FIXME: << "name: " << info.name */
+        << "count: " << info.count << ", before: " << info.before << ", after: " << info.after;
     return out;
 }
 
-// void copy_func_info(FuncOutput* out) {}
+void copy_func_info(int count, FuncOutput* out) {
+    std::cerr << "addr:" << out << std::endl;
+    out->count = 42;
+}
 
 void exit_handler() {
     std::cerr << "Profiling Summary:" << std::endl;
     std::cerr << "%\tcumulative\tself" << std::endl;
     std::cerr << "time\tseconds\t\tseconds\t\t\tcalls\tname" << std::endl;
     for (int i = 0; i < MAX_NUM_FUNCS; i++) {
-        std::cerr << funcs[i] << std::endl;
+        if(funcs[i].count) {
+          std::cerr << funcs[i] << std::endl;
+        }
     }
-    free(funcs);
 }

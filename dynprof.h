@@ -23,6 +23,8 @@
 // PCH
 #include "dyninst.h"
 
+#include <unordered_map>
+
 #if DYNINST_MAJOR < 9
 #error "Please use Dyninst 9.0 or newer"
 #endif
@@ -34,15 +36,13 @@
 #define MAX_NUM_FUNCS 1000
 #define MAX_FUNC_NAME 256
 
-#include <unordered_map>
-
 std::string resolve_path(std::string file);
 
 struct FuncOutput {
     double before;
     double after;
     char name[MAX_FUNC_NAME];
-    long count;
+    int64_t count;
 };
 
 class FuncInfo {

@@ -45,8 +45,9 @@ void DynProf::enum_subroutines(BPatch_function* func) {
     if (func_map.count(func)) {
         return;
     }
-    if(func_map.size() >= MAX_NUM_FUNCS) {
-        std::cerr << "DynProf currently only supports profiling up to " << MAX_NUM_FUNCS << " functions." << std::endl;
+    if (func_map.size() >= MAX_NUM_FUNCS) {
+        std::cerr << "DynProf currently only supports profiling up to " << MAX_NUM_FUNCS
+                  << " functions." << std::endl;
         shutdown();
     }
     recordFunc(func);
@@ -179,12 +180,13 @@ void DynProf::registerCleanupSnippet() {
     // FIXME: figure out when to free this.
     // BPatch_variableExpr* elapsed_count = app->malloc(*app->getImage()->findType("double"));
     BPatch_variableExpr* funcs = app->getImage()->findVariable("funcs");
-    if(!funcs) {
+    if (!funcs) {
         std::cerr << "Could not find function output var." << std::endl;
         shutdown();
     }
-    //FuncOutput* func_info = static_cast<FuncOutput*>(funcs->getBaseAddr());
-    //BPatch_arithExpr funcs_addr(BPatch_addr, *funcs);
+    // FuncOutput* func_info = static_cast<FuncOutput*>(funcs->getBaseAddr());
+    // BPatch_arithExpr funcs_addr(BPatch_addr, *funcs);
+    BPatch_function* copy_func = get_function("copy_func_info");
 
     std::vector<BPatch_snippet*> snippets;
     uint64_t idx = 0;
@@ -192,7 +194,12 @@ void DynProf::registerCleanupSnippet() {
         if (it->first->getName() == DEFAULT_ENTRY_POINT) {
             continue;
         }
-        BPatch_arithExpr func_out(BPatch_ref, *funcs, BPatch_constExpr(idx));
+        std::vector<BPatch_snippet*> out_args;
+        //out_args.push_back(new BPatch_arithExpr(BPatch_addr, *it->second->count));
+        out_args.push_back(new BPatch_constExpr(42));
+        out_args.push_back(new BPatch_arithExpr(BPatch_ref, *funcs, BPatch_constExpr(idx)));
+        BPatch_funcCallExpr* func_snip = new BPatch_funcCallExpr(*copy_func, out_args);
+        snippets.push_back(func_snip);
         /*std::vector<BPatch_snippet*> elapsed_args;
         BPatch_snippet lib_func =
             BPatch_arithExpr(BPatch_plus, BPatch_arithExpr(BPatch_addr, *funcs),
@@ -203,7 +210,7 @@ void DynProf::registerCleanupSnippet() {
         funcs->getComponents()->at(2)->writeValue(new BPatch_constExpr(32));
         funcs->getComponents()->at(3)->writeValue(new BPatch_constExpr("foo"));
         funcs->getComponents()->at(4)->writeValue(new BPatch_constExpr(42));*/
-        //func_info[idx].count = 42;
+        // func_info[idx].count = 42;
 
         /*
         elapsed_args.push_back(new BPatch_arithExpr(BPatch_addr, *it->second->before));
@@ -228,20 +235,18 @@ void DynProf::registerCleanupSnippet() {
     }
     BPatch_sequence exit_snippet(snippets);
 
-    /* FIXME: don't wanna re-write libdynprof.so
-    BPatch_function* handler_func = get_function("exit_handler");
-    BPatch_module* lib_mod = handler_func->getModule();
-    std::unique_ptr<std::vector<BPatch_point*>> handler_entry_points(
-        handler_func->findPoint(BPatch_exit));
-    if (!handler_entry_points || handler_entry_points->size() == 0) {
-        std::cerr << "Could not find entry point for " << handler_func->getName() << std::endl;
+    //* FIXME: don't wanna re-write libdynprof.so
+    BPatch_function* exit_func = get_function(DEFAULT_ENTRY_POINT);
+    std::unique_ptr<std::vector<BPatch_point*>> exit_points(
+        exit_func->findPoint(BPatch_exit));
+    if (!exit_points || exit_points->size() == 0) {
+        std::cerr << "Could not find entry point for " << exit_func->getName() << std::endl;
         shutdown();
     }
-    if (!app->insertSnippet(exit_snippet, *handler_entry_points->at(0), BPatch_callAfter)) {
+    if (!app->insertSnippet(exit_snippet, *exit_points->at(0), BPatch_callAfter)) {
         std::cerr << "Could not insert summary snippet." << std::endl;
         shutdown();
     }
-    */
 }
 
 void DynProf::createSnippets(BPatch_function* func) {
@@ -268,7 +273,8 @@ void DynProf::create_structs() {
         shutdown();
     }
     /*
-    std::vector<char*> output_field_names{const_cast<char*>("before"), const_cast<char*>("after"), const_cast<char*>("name"), const_cast<char*>("count")};
+    std::vector<char*> output_field_names{const_cast<char*>("before"), const_cast<char*>("after"),
+    const_cast<char*>("name"), const_cast<char*>("count")};
     std::vector<BPatch_type*> output_field_types{
         app->getImage()->findType("double"),
         app->getImage()->findType("double"),
