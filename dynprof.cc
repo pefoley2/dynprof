@@ -34,9 +34,10 @@ std::string resolve_path(std::string file) {
 void FuncInfo::addChild(BPatch_function* func) { children.push_back(func); }
 
 void DynProf::recordFunc(BPatch_function* func) {
+    BPatch_variableExpr* id = app->malloc(*app->getImage()->findType("int"));
     BPatch_variableExpr* before = app->malloc(*timespec_struct);
     BPatch_variableExpr* after = app->malloc(*timespec_struct);
-    func_map.insert(std::make_pair(func, new FuncInfo(before, after)));
+    func_map.insert(std::make_pair(func, new FuncInfo(id, before, after)));
 }
 
 void DynProf::enum_subroutines(BPatch_function* func) {
@@ -118,6 +119,10 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
     // Include \0
     entry_vec.push_back(writeSnippet(new BPatch_constExpr(name.c_str()), name.size() + 1));
 
+    entry_vec.push_back(new BPatch_arithExpr(
+        BPatch_assign, *func_map[func]->id,
+        BPatch_arithExpr(BPatch_plus, *func_map[func]->id, BPatch_constExpr(1))));
+
     std::vector<BPatch_snippet*> clock_args;
     clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
     clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map[func]->before));
@@ -125,10 +130,9 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
 
     // FIXME: entry_vec.push_back(writeSnippet(new BPatch_constExpr(strlen(name.c_str())),
     // sizeof(size_t)));
-    // entry_vec.push_back(writeSnippet(new BPatch_constExpr(func_map[func]->id), sizeof(long)));
+    // BPatch_constExpr id_expr(func_map[func]->id);
+    // FIXME: entry_vec.push_back(writeSnippet(func_map[func]->id, sizeof(int)));
     entry_vec.push_back(writeSnippet(func_map[func]->before, sizeof(struct timespec)));
-
-    func_map[func]->id++;
 
     BPatch_sequence entry_seq(entry_vec);
     for (auto entry_point : *entry_points) {
