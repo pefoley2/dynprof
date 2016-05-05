@@ -46,12 +46,20 @@ int main(int argc, char* argv[]) {
     }
     std::cerr << "Profiling Summary:" << std::endl;
     std::cerr << "time\tseconds\t\tseconds\t\t\tcalls\tname" << std::endl;
-    char *name = static_cast<char*>(malloc(sizeof(char)));
-    size_t len = 0;
-    while(getline(&name, &len, f) != -1) {
-        std::cerr << name;
+    char name[500+1];
+    struct timespec t;
+    while(!feof(f)) {
+        if(fscanf(f, "%s500", name) < 0) {
+          std::cerr << "Could not read name" << std::endl;
+          return -1;
+        }
+        fread(&t, sizeof(struct timespec), 1, f);
+        if(ferror(f)) {
+          std::cerr << "Could not read before" << std::endl;
+          return -1;
+        }
+        std::cerr << name << ":" << t.tv_sec << ":" << t.tv_nsec << std::endl;
     }
-    free(name);
     fclose(f);
     return 0;
 }
