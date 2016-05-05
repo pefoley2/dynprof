@@ -21,6 +21,13 @@
 
 static int output_fd;
 
+static void exit_handler() {
+    if(close(output_fd) < 0) {
+        std::cerr << "Failed to close output file." << std::endl;
+        exit(1);
+    }
+}
+
 void __dynprof_register_handler() {
     if (atexit(exit_handler)) {
         std::cerr << "Failed to register atexit handler." << std::endl;
@@ -29,7 +36,6 @@ void __dynprof_register_handler() {
     std::string fname = "out_dynprof." + std::to_string(getpid());
     std::string header = "DYNPROF:" + std::to_string(OUTPUT_VERSION) + "\0";
     int fd = open(fname.c_str(), O_CREAT|O_WRONLY, S_IRUSR|S_IWUSR);
-    std::cerr << "memes: " << fd << std::endl;
     if(fd < 0) {
         std::cerr << "Failed to open output file." << std::endl;
         exit(1);
@@ -39,48 +45,4 @@ void __dynprof_register_handler() {
         exit(1);
     }
     output_fd = fd;
-}
-
-/*
-void elapsed_time(struct timespec* before, struct timespec* after, double* output) {
-    std::cerr << output << std::endl;
-    std::cerr << *output << std::endl;
-    //FIXME: *output = 420.5;
-    nanoseconds before_c =
-        seconds(before->tv_sec) + nanoseconds(before->tv_nsec);
-    nanoseconds after_c =
-        seconds(after->tv_sec) + nanoseconds(after->tv_nsec);
-    nanoseconds elapsed = after_c - before_c;
-    double bob = elapsed.count() / duration_cast<nanoseconds>(seconds(1)).count();
-    std::cerr << "foo:" << bob << ":" << elapsed.count() << std::endl;
-    return bob;
-}
-*/
-
-/*
-std::ostream& operator<<(std::ostream& out, const FuncOutput& info) {
-    out << "name: " << info.name
-        << "count: " << info.count << ", before: " << info.before << ", after: " << info.after;
-    return out;
-}
-
-void copy_func_info(int count, FuncOutput* out) {
-    std::cerr << "addr:" << out << std::endl;
-    out->count = 42;
-}
-*/
-
-void exit_handler() {
-    std::cerr << "memes: " << output_fd << std::endl;
-    if(close(output_fd) < 0) {
-        std::cerr << "Failed to close output file." << std::endl;
-        exit(1);
-    }
-  /*  std::cerr << "%\tcumulative\tself" << std::endl;
-    std::cerr << "time\tseconds\t\tseconds\t\t\tcalls\tname" << std::endl;
-    for (int i = 0; i < MAX_NUM_FUNCS; i++) {
-        if(funcs[i].count) {
-          std::cerr << funcs[i] << std::endl;
-        }
-    }*/
 }
