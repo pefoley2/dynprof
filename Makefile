@@ -23,7 +23,7 @@ MAKEFLAGS=rR
 
 LDFLAGS := $(strip $(LDFLAGS) -Wl,-O1 -Wl,--as-needed)
 
-all: dynprof libdynprof.so example/test example/time
+all: dynprof display libdynprof.so example/test example/time
 
 example/%: example/%.cc
 	$(CXX) $(filter-out -fsanitize=%,$(CXXFLAGS)) -o $@ $<
@@ -35,6 +35,10 @@ dynprof.h: dyninst.h.gch
 
 %.so: %.cc %.h dynprof.h
 	$(CXX) $(filter-out -fsanitize=%,$(CXXFLAGS)) $(LDFLAGS) -shared -o $@ $<
+
+display: display.cc
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
+
 
 %.o: %.cc dynprof.h
 	$(CXX) $(CXXFLAGS) -include dyninst.h -c $< -o $@
@@ -68,6 +72,6 @@ run: test_dynprof
 	./test_dynprof
 
 clean:
-	rm -rf *.o *.so dyninst.h.gch dynprof test_dynprof example/test example/time work
+	rm -rf *.o *.so dyninst.h.gch display dynprof test_dynprof example/test example/time work
 
 .PHONY: all format analyze tidy test binary run clean

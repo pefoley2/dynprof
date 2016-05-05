@@ -19,17 +19,26 @@
 
 #include "libdynprof.h"
 
-// using std::chrono::nanoseconds;
-
-static FuncOutput funcs[MAX_NUM_FUNCS];
+static int output_fd;
 
 void __dynprof_register_handler() {
-    // FIXME: needed?
-    //memset(funcs, 0, sizeof(FuncOutput) * MAX_NUM_FUNCS);
     if (atexit(exit_handler)) {
         std::cerr << "Failed to register atexit handler." << std::endl;
         exit(1);
     }
+    std::string fname = "out_dynprof." + std::to_string(getpid());
+    std::string header = "DYNPROF:" + std::to_string(OUTPUT_VERSION) + "\0";
+    int fd = open(fname.c_str(), O_CREAT|O_WRONLY, S_IRUSR|S_IWUSR);
+    std::cerr << "memes: " << fd << std::endl;
+    if(fd < 0) {
+        std::cerr << "Failed to open output file." << std::endl;
+        exit(1);
+    }
+    if(write(fd, header.c_str(), header.length()) < 0) {
+        std::cerr << "Failed to write header to output file." << std::endl;
+        exit(1);
+    }
+    output_fd = fd;
 }
 
 /*
@@ -48,8 +57,9 @@ void elapsed_time(struct timespec* before, struct timespec* after, double* outpu
 }
 */
 
+/*
 std::ostream& operator<<(std::ostream& out, const FuncOutput& info) {
-    out /* FIXME: << "name: " << info.name */
+    out << "name: " << info.name
         << "count: " << info.count << ", before: " << info.before << ", after: " << info.after;
     return out;
 }
@@ -58,14 +68,19 @@ void copy_func_info(int count, FuncOutput* out) {
     std::cerr << "addr:" << out << std::endl;
     out->count = 42;
 }
+*/
 
 void exit_handler() {
-    std::cerr << "Profiling Summary:" << std::endl;
-    std::cerr << "%\tcumulative\tself" << std::endl;
+    std::cerr << "memes: " << output_fd << std::endl;
+    if(close(output_fd) < 0) {
+        std::cerr << "Failed to close output file." << std::endl;
+        exit(1);
+    }
+  /*  std::cerr << "%\tcumulative\tself" << std::endl;
     std::cerr << "time\tseconds\t\tseconds\t\t\tcalls\tname" << std::endl;
     for (int i = 0; i < MAX_NUM_FUNCS; i++) {
         if(funcs[i].count) {
           std::cerr << funcs[i] << std::endl;
         }
-    }
+    }*/
 }

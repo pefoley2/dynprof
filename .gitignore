@@ -1,4 +1,6 @@
+display
 dynprof
+out_dynprof.*
 dyninst.h.gch
 CMakeCache.txt
 CMakeFiles

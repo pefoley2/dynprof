@@ -17,25 +17,34 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LIBDYNPROF_H
-#define LIBDYNPROF_H
-
-#include <fcntl.h>
-#include <chrono>
-#include <cstdlib>
-#include <cstdio>
 #include <iostream>
+#include <cstdio>
+#include <cstring>
 
-#include "dynprof.h"
+static void usage() { std::cerr << "Usage: ./display out_dynprof.*" << std::endl; }
 
-#define OUTPUT_VERSION 1
+static char expected_header[] = "DYNPROF:1\0";
 
-std::ostream& operator<<(std::ostream& os, const FuncOutput& func);
-
-void __dynprof_register_handler() __attribute__((visibility("default")));
-void copy_func_info(int count, FuncOutput* out) __attribute__((visibility("default")));
-// double elapsed_time(struct timespec* before, struct timespec* after)
-// __attribute__((visibility("default")));
-void exit_handler(void);
-
-#endif
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        usage();
+        return -1;
+    }
+    FILE* f = fopen(argv[1], "r");
+    if(!f) {
+        std::cerr << "Failed to open: " << argv[1] << std::endl;
+        return -1;
+    }
+    char header[10];
+    if(!fgets(header, 10, f)) {
+        std::cerr << "Failed to read header" << std::endl;
+        return -1;
+    }
+    if(strcmp(header, expected_header)) {
+        std::cerr << "Invalid header:" << header << std::endl;
+        free(header);
+        return -1;
+    }
+    std::cerr << "Profiling Summary:" << std::endl;
+    return 0;
+}

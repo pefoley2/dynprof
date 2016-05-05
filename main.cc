@@ -21,11 +21,7 @@
 
 #include "dynprof.h"  // for DynProf
 
-std::unique_ptr<std::string> get_path(std::string exe);
-const char** get_params(std::vector<std::string> args);
-void usage();
-
-std::unique_ptr<std::string> get_path(std::string exe) {
+static std::unique_ptr<std::string> get_path(std::string exe) {
     std::unique_ptr<std::string> path(new std::string);
     path->assign(getenv("PATH"));
     std::unique_ptr<std::string> fullpath(new std::string);
@@ -48,7 +44,7 @@ std::unique_ptr<std::string> get_path(std::string exe) {
     return fullpath;
 }
 
-const char** get_params(std::vector<std::string> args) {
+static const char** get_params(std::vector<std::string> args) {
     char** params = static_cast<char**>(malloc((args.size() + 1) * sizeof(char*)));
     // Skip the exe, that's resolved by get_path
     for (size_t i = 1; i < args.size(); i++) {
@@ -61,7 +57,7 @@ const char** get_params(std::vector<std::string> args) {
     return const_cast<const char**>(params);
 }
 
-void usage() { std::cerr << "Usage: ./dynprof (--write) [program] arg1,arg2,arg3..." << std::endl; }
+static void usage() { std::cerr << "Usage: ./dynprof (--write) [program] arg1,arg2,arg3..." << std::endl; }
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {

@@ -72,7 +72,9 @@ class DynProf {
           app(nullptr),
           timespec_struct(nullptr),
           clock_func(nullptr),
+          write_func(nullptr),
           printf_func(nullptr),
+          output_var(nullptr),
           bpatch(),
           func_map() {
         // TODO(peter): support windows paths?
@@ -93,7 +95,9 @@ class DynProf {
     BPatch_addressSpace* app;
     BPatch_type* timespec_struct;
     BPatch_function* clock_func;
+    BPatch_function* write_func;
     BPatch_function* printf_func;
+    BPatch_variableExpr* output_var;
     BPatch bpatch;
     FuncMap func_map;
     void hook_functions();
