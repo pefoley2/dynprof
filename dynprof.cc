@@ -45,11 +45,6 @@ void DynProf::enum_subroutines(BPatch_function* func) {
     if (func_map.count(func)) {
         return;
     }
-    if (func_map.size() >= MAX_NUM_FUNCS) {
-        std::cerr << "DynProf currently only supports profiling up to " << MAX_NUM_FUNCS
-                  << " functions." << std::endl;
-        shutdown();
-    }
     recordFunc(func);
     if (func->getName() != DEFAULT_ENTRY_POINT) {
         // Register entry/exit snippets.
@@ -106,11 +101,13 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
         return false;
     }
 
+    std::string name = func->getName() + "\n";
+
     std::vector<BPatch_snippet*> entry_vec;
 #if DEBUG
     std::vector<BPatch_snippet*> entry_args;
-    entry_args.push_back(new BPatch_constExpr("Entering %s\n"));
-    entry_args.push_back(new BPatch_constExpr(func->getName().c_str()));
+    entry_args.push_back(new BPatch_constExpr("Entering %s"));
+    entry_args.push_back(new BPatch_constExpr(name.c_str()));
     entry_vec.push_back(new BPatch_funcCallExpr(*printf_func, entry_args));
 #endif
 
@@ -118,17 +115,15 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
         BPatch_assign, *func_map[func]->count,
         BPatch_arithExpr(BPatch_plus, *func_map[func]->count, BPatch_constExpr(1))));
 
-    // FIXME: don't just overwrite previous runs.
     std::vector<BPatch_snippet*> clock_args;
     clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
     clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map[func]->before));
     entry_vec.push_back(new BPatch_funcCallExpr(*clock_func, clock_args));
-    std::vector<BPatch_snippet*> write_args;
-    write_args.push_back(output_var);
-    //write_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map[func]->count));
-    write_args.push_back(new BPatch_constExpr(func->getName().c_str()));
-    write_args.push_back(new BPatch_constExpr(func->getName().size()));
-    entry_vec.push_back(new BPatch_funcCallExpr(*write_func, write_args));
+    std::vector<BPatch_snippet*> name_args;
+    name_args.push_back(output_var);
+    name_args.push_back(new BPatch_constExpr(name.c_str()));
+    name_args.push_back(new BPatch_constExpr(name.size()));
+    entry_vec.push_back(new BPatch_funcCallExpr(*write_func, name_args));
 
     BPatch_sequence entry_seq(entry_vec);
     for (auto entry_point : *entry_points) {

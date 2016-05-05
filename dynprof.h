@@ -32,18 +32,7 @@
 #define DEFAULT_ENTRY_POINT "main"
 #define HELPER_LIB "libdynprof.so"
 
-// FIXME: make dynamic?
-#define MAX_NUM_FUNCS 1000
-#define MAX_FUNC_NAME 256
-
 std::string resolve_path(std::string file);
-
-struct FuncOutput {
-    double before;
-    double after;
-    char name[MAX_FUNC_NAME];
-    int64_t count;
-};
 
 class FuncInfo {
    public:
@@ -55,7 +44,6 @@ class FuncInfo {
     BPatch_variableExpr* const count;
     BPatch_variableExpr* const before;
     BPatch_variableExpr* const after;
-    friend std::ostream& operator<<(std::ostream& os, const FuncInfo& info);
 
    private:
     std::vector<BPatch_function*> children;

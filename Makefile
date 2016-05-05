@@ -71,7 +71,10 @@ test_dynprof: dynprof libdynprof.so example/test
 run: test_dynprof
 	./test_dynprof
 
+output: display
+	./display $(firstword $(wildcard out_dynprof.*))
+
 clean:
 	rm -rf *.o *.so dyninst.h.gch display dynprof test_dynprof example/test example/time work
 
-.PHONY: all format analyze tidy test binary run clean
+.PHONY: all format analyze tidy test binary run clean output

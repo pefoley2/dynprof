@@ -42,9 +42,16 @@ int main(int argc, char* argv[]) {
     }
     if(strcmp(header, expected_header)) {
         std::cerr << "Invalid header:" << header << std::endl;
-        free(header);
         return -1;
     }
     std::cerr << "Profiling Summary:" << std::endl;
+    std::cerr << "time\tseconds\t\tseconds\t\t\tcalls\tname" << std::endl;
+    char *name = static_cast<char*>(malloc(sizeof(char)));
+    size_t len = 0;
+    while(getline(&name, &len, f) != -1) {
+        std::cerr << name;
+    }
+    free(name);
+    fclose(f);
     return 0;
 }
