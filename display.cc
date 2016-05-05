@@ -45,6 +45,7 @@ int main(int argc, char* argv[]) {
         return -1;
     }
     int ret = 0;
+    char* name = nullptr;
     FILE* f = fopen(argv[1], "r");
     if (!f) {
         std::cerr << "Failed to open: " << argv[1] << std::endl;
@@ -53,16 +54,17 @@ int main(int argc, char* argv[]) {
     char header[10];
     if (!fgets(header, 10, f)) {
         std::cerr << "Failed to read header" << std::endl;
-        return -1;
+        ret = -1;
+        goto out;
     }
     if (strcmp(header, expected_header)) {
         std::cerr << "Invalid header:" << header << std::endl;
-        return -1;
+        ret = -1;
+        goto out;
     }
     std::cerr << "Profiling Summary:" << std::endl;
     std::cerr << "time\tseconds\t\tseconds\t\t\tcalls\tname" << std::endl;
     struct timespec t;
-    char* name = nullptr;
     size_t name_len;
     int id;
     while (!feof(f)) {
@@ -77,7 +79,7 @@ int main(int argc, char* argv[]) {
             ret = -1;
             goto out;
         }
-        if (!read_obj(f, &id, sizeof(long))) {
+        if (!read_obj(f, &id, sizeof(int))) {
             std::cerr << "Could not read id" << std::endl;
             ret = -1;
             goto out;

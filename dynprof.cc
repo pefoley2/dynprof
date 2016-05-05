@@ -232,7 +232,7 @@ void DynProf::find_funcs() {
     if (funcs->size() != 1) {
         for (size_t i = 0; i < funcs->size(); i++) {
             if (funcs->at(i)->getName() == "__GI___write") {
-                funcs->erase(funcs->begin() + static_cast<long>(i));
+                funcs->erase(funcs->begin() + static_cast<int64_t>(i));
                 break;
             }
         }

@@ -20,11 +20,11 @@
 #ifndef LIBDYNPROF_H
 #define LIBDYNPROF_H
 
-#include <fcntl.h>
-#include <unistd.h>
 #include <cstdlib>
 #include <cstdio>
 #include <iostream>
+#include <fcntl.h>
+#include <unistd.h>
 
 #define OUTPUT_VERSION 1
 

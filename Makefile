@@ -50,7 +50,7 @@ format:
 	clang-format -i -style="{BasedOnStyle: google, IndentWidth: 4, ColumnLimit: 100}" *.cc *.h example/*.cc
 
 analyze:
-	@for x in libdynprof.cc main.cc dynprof.cc; do \
+	@for x in libdynprof.cc main.cc dynprof.cc display.cc; do \
 	echo $$x; \
 	clang++ --analyze $(CXXFLAGS) -o /dev/null $$x; \
 	done
