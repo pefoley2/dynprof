@@ -57,7 +57,9 @@ static const char** get_params(std::vector<std::string> args) {
     return const_cast<const char**>(params);
 }
 
-static void usage() { std::cerr << "Usage: ./dynprof (--write) [program] arg1,arg2,arg3..." << std::endl; }
+static void usage() {
+    std::cerr << "Usage: ./dynprof (--write) [program] arg1,arg2,arg3..." << std::endl;
+}
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {

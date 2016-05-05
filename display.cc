@@ -25,41 +25,74 @@ static void usage() { std::cerr << "Usage: ./display out_dynprof.*" << std::endl
 
 static char expected_header[] = "DYNPROF:1\0";
 
+static bool read_obj(FILE* f, void* ptr, size_t len) {
+    if (ferror(f)) {
+        return false;
+    }
+    clearerr(f);
+    if (fread(ptr, len, 1, f) != 1) {
+        return false;
+    }
+    if (ferror(f)) {
+        return false;
+    }
+    return true;
+}
+
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         usage();
         return -1;
     }
+    int ret = 0;
     FILE* f = fopen(argv[1], "r");
-    if(!f) {
+    if (!f) {
         std::cerr << "Failed to open: " << argv[1] << std::endl;
         return -1;
     }
     char header[10];
-    if(!fgets(header, 10, f)) {
+    if (!fgets(header, 10, f)) {
         std::cerr << "Failed to read header" << std::endl;
         return -1;
     }
-    if(strcmp(header, expected_header)) {
+    if (strcmp(header, expected_header)) {
         std::cerr << "Invalid header:" << header << std::endl;
         return -1;
     }
     std::cerr << "Profiling Summary:" << std::endl;
     std::cerr << "time\tseconds\t\tseconds\t\t\tcalls\tname" << std::endl;
-    char name[500+1];
     struct timespec t;
-    while(!feof(f)) {
-        if(fscanf(f, "%s500", name) < 0) {
-          std::cerr << "Could not read name" << std::endl;
-          return -1;
+    char* name = nullptr;
+    size_t name_len;
+    int id;
+    while (!feof(f)) {
+        if (!read_obj(f, &name_len, sizeof(size_t))) {
+            std::cerr << "Could not read name length" << std::endl;
+            ret = -1;
+            goto out;
         }
-        fread(&t, sizeof(struct timespec), 1, f);
-        if(ferror(f)) {
-          std::cerr << "Could not read before" << std::endl;
-          return -1;
+        name = static_cast<char*>(malloc(name_len));
+        if (!read_obj(f, name, name_len)) {
+            std::cerr << "Could not read name" << std::endl;
+            ret = -1;
+            goto out;
         }
-        std::cerr << name << ":" << t.tv_sec << ":" << t.tv_nsec << std::endl;
+        if (!read_obj(f, &id, sizeof(long))) {
+            std::cerr << "Could not read id" << std::endl;
+            ret = -1;
+            goto out;
+        }
+        if (!read_obj(f, &t, sizeof(struct timespec))) {
+            std::cerr << "Could not read timespec" << std::endl;
+            ret = -1;
+            goto out;
+        }
+        std::cerr << name << ":" << id << ":" << t.tv_sec << ":" << t.tv_nsec << std::endl;
+        free(name);
+        name = nullptr;
     }
+out:
+    free(name);
     fclose(f);
-    return 0;
+    return ret;
 }

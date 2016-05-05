@@ -92,7 +92,7 @@ void DynProf::hook_functions() {
 }
 
 BPatch_funcCallExpr* DynProf::writeSnippet(BPatch_snippet* ptr, size_t len) {
-    std::vector<BPatch_snippet*> *name_args = new std::vector<BPatch_snippet*>;
+    std::vector<BPatch_snippet*>* name_args = new std::vector<BPatch_snippet*>;
     name_args->push_back(output_var);
     name_args->push_back(ptr);
     name_args->push_back(new BPatch_constExpr(len));
@@ -115,14 +115,20 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
     entry_args.push_back(new BPatch_constExpr(name.c_str()));
     entry_vec.push_back(new BPatch_funcCallExpr(*printf_func, entry_args));
 #endif
-    entry_vec.push_back(writeSnippet(new BPatch_constExpr(name.c_str()), name.size()+1));
+    // Include \0
+    entry_vec.push_back(writeSnippet(new BPatch_constExpr(name.c_str()), name.size() + 1));
 
     std::vector<BPatch_snippet*> clock_args;
     clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
     clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map[func]->before));
     entry_vec.push_back(new BPatch_funcCallExpr(*clock_func, clock_args));
 
+    // FIXME: entry_vec.push_back(writeSnippet(new BPatch_constExpr(strlen(name.c_str())),
+    // sizeof(size_t)));
+    // entry_vec.push_back(writeSnippet(new BPatch_constExpr(func_map[func]->id), sizeof(long)));
     entry_vec.push_back(writeSnippet(func_map[func]->before, sizeof(struct timespec)));
+
+    func_map[func]->id++;
 
     BPatch_sequence entry_seq(entry_vec);
     for (auto entry_point : *entry_points) {
@@ -215,7 +221,24 @@ void DynProf::find_funcs() {
         shutdown();
     }
     clock_func = get_function("clock_gettime");
-    write_func = get_function("write");
+
+    std::unique_ptr<std::vector<BPatch_function*>> funcs(new std::vector<BPatch_function*>);
+    app->getImage()->findFunction("write", *funcs);
+    // glibc has two different internal definitions of write()
+    if (funcs->size() != 1) {
+        for (size_t i = 0; i < funcs->size(); i++) {
+            if (funcs->at(i)->getName() == "__GI___write") {
+                funcs->erase(funcs->begin() + static_cast<long>(i));
+                break;
+            }
+        }
+    }
+    if (funcs->size() != 1) {
+        std::cerr << "Found " << funcs->size() << " matches for: write" << std::endl;
+        shutdown();
+    }
+    write_func = funcs->at(0);
+
 #if 1  // FIXME: only enable when DEBUG
     printf_func = get_function("printf", true);
 #endif
