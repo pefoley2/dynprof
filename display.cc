@@ -47,23 +47,21 @@ static bool read_obj(FILE* f, void* ptr, size_t len) {
 class FuncCall {
     public:
      FuncCall(bool _type, int _id, struct timespec _time) : type(_type), id(_id), time(_time) {}
-     FuncCall(const FuncCall&) = delete;
-     FuncCall& operator=(const FuncCall&) = delete;
      int type;
      int id;
      struct timespec time;
 };
 
-typedef std::unordered_map<std::string, std::vector<FuncCall*>> FuncMap;
+typedef std::unordered_map<std::string, std::vector<FuncCall>> FuncMap;
 
 static void process_output(FuncMap funcs) {
     std::cerr << "time\tseconds\t\tseconds\t\t\tcalls\tname" << std::endl;
     for(auto func: funcs) {
         std::cerr << func.first << ":";
         for(auto call: func.second) {
-            std::cerr << (call->type ? "after" : "before") << "(" << call->id
-                << ":" << call->time.tv_sec
-                << ":" << call->time.tv_nsec << "),";
+            std::cerr << (call.type ? "after" : "before") << "(" << call.id
+                << ":" << call.time.tv_sec
+                << ":" << call.time.tv_nsec << "),";
         }
         std::cerr << std::endl;
     }
@@ -118,9 +116,9 @@ static int read_file(char* fname) {
             goto out;
         }
         if(funcs->count(name) == 0) {
-          funcs->insert(std::make_pair(std::string(name), std::vector<FuncCall*>()));
+          funcs->insert(std::make_pair(std::string(name), std::vector<FuncCall>()));
         }
-        funcs->at(name).push_back(new FuncCall(type, id, t));
+        funcs->at(name).push_back(FuncCall(type, id, t));
     }
 out:
     free(name);

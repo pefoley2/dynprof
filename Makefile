@@ -14,7 +14,7 @@ CXXFLAGS += -ggdb3
 #CXXFLAGS += -O2
 #CXXFLAGS += -flto
 #CXXFLAGS += -floop-interchange -floop-strip-mine -floop-block -fgraphite-identity
-#CXXFLAGS += -fsanitize=address -fno-assume-sane-operator-new
+#CXXFLAGS += -fsanitize=address
 #CXXFLAGS += -fsanitize=thread
 #CXXFLAGS += -fsanitize=memory
 #CXXFLAGS += -fsanitize=undefined
