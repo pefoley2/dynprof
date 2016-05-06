@@ -44,24 +44,26 @@ static bool read_obj(FILE* f, void* ptr, size_t len) {
     return true;
 }
 
-class FuncCall {
-    public:
-     FuncCall(bool _type, int _id, struct timespec _time) : type(_type), id(_id), time(_time) {}
-     int type;
-     int id;
+struct FuncCall {
      struct timespec time;
 };
 
-typedef std::unordered_map<std::string, std::vector<FuncCall>> FuncMap;
+
+typedef std::unordered_map<int, std::pair<FuncCall, FuncCall>> CallMap;
+typedef std::unordered_map<std::string, CallMap> FuncMap;
 
 static void process_output(FuncMap funcs) {
     std::cerr << "time\tseconds\t\tseconds\t\t\tcalls\tname" << std::endl;
     for(auto func: funcs) {
         std::cerr << func.first << ":";
         for(auto call: func.second) {
-            std::cerr << (call.type ? "after" : "before") << "(" << call.id
-                << ":" << call.time.tv_sec
-                << ":" << call.time.tv_nsec << "),";
+            FuncCall before = call.second.first, after = call.second.second;
+            std::cerr << "before(" << call.first
+                    << ":" << before.time.tv_sec
+                    << ":" << before.time.tv_nsec << "),";
+            std::cerr << "after(" << call.first
+                    << ":" << after.time.tv_sec
+                    << ":" << after.time.tv_nsec << "),";
         }
         std::cerr << std::endl;
     }
@@ -116,9 +118,16 @@ static int read_file(char* fname) {
             goto out;
         }
         if(funcs->count(name) == 0) {
-          funcs->insert(std::make_pair(std::string(name), std::vector<FuncCall>()));
+          funcs->insert(std::make_pair(std::string(name), CallMap()));
         }
-        funcs->at(name).push_back(FuncCall(type, id, t));
+        if(funcs->at(name).count(id) == 0) {
+          funcs->at(name).insert(std::make_pair(id, std::make_pair(FuncCall{}, FuncCall{})));
+        }
+        if(type) {
+          funcs->at(name).at(id).first.time = t;
+        } else {
+          funcs->at(name).at(id).second.time = t;
+        }
     }
 out:
     free(name);
@@ -138,7 +147,9 @@ int main(int argc, char* argv[]) {
     int ret = 0;
     for (int i = 1; i < argc; i++) {
         ret = read_file(argv[i]);
-        if (ret) return ret;
+        if (ret) {
+            return ret;
+        }
     }
     return ret;
 }
