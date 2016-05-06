@@ -20,6 +20,9 @@
 #include <iostream>
 #include <cstdio>
 #include <cstring>
+#include <memory>
+#include <unordered_map>
+#include <vector>
 
 static void usage() { std::cerr << "Usage: ./display out_dynprof.*" << std::endl; }
 
@@ -41,10 +44,36 @@ static bool read_obj(FILE* f, void* ptr, size_t len) {
     return true;
 }
 
+class FuncCall {
+    public:
+     FuncCall(bool _type, int _id, struct timespec _time) : type(_type), id(_id), time(_time) {}
+     FuncCall(const FuncCall&) = delete;
+     FuncCall& operator=(const FuncCall&) = delete;
+     int type;
+     int id;
+     struct timespec time;
+};
+
+typedef std::unordered_map<std::string, std::vector<FuncCall*>> FuncMap;
+
+static void process_output(FuncMap funcs) {
+    std::cerr << "time\tseconds\t\tseconds\t\t\tcalls\tname" << std::endl;
+    for(auto func: funcs) {
+        std::cerr << func.first << ":";
+        for(auto call: func.second) {
+            std::cerr << (call->type ? "after" : "before") << "(" << call->id
+                << ":" << call->time.tv_sec
+                << ":" << call->time.tv_nsec << "),";
+        }
+        std::cerr << std::endl;
+    }
+}
+
 static int read_file(char* fname) {
     int ret = 0, id = 0;
     char* name = nullptr;
     size_t name_len = 0;
+    std::unique_ptr<FuncMap> funcs(new FuncMap);
     FILE* f = fopen(fname, "r");
     if (!f) {
         std::cerr << "Failed to open: " << fname << std::endl;
@@ -61,8 +90,6 @@ static int read_file(char* fname) {
         ret = -1;
         goto out;
     }
-    std::cerr << "Profiling Summary from " << fname << std::endl;
-    std::cerr << "time\tseconds\t\tseconds\t\t\tcalls\tname" << std::endl;
     bool type;
     struct timespec t;
     memset(&t, 0, sizeof(struct timespec));
@@ -90,12 +117,18 @@ static int read_file(char* fname) {
             ret = -1;
             goto out;
         }
-        std::cerr << name << ":" << (type ? "after" : "before") << ":" << id << ":" << t.tv_sec
-                  << ":" << t.tv_nsec << std::endl;
+        if(funcs->count(name) == 0) {
+          funcs->insert(std::make_pair(std::string(name), std::vector<FuncCall*>()));
+        }
+        funcs->at(name).push_back(new FuncCall(type, id, t));
     }
 out:
     free(name);
     fclose(f);
+    if(ret == 0) {
+        std::cerr << "Profiling Summary from " << fname << std::endl;
+        process_output(*funcs);
+    }
     return ret;
 }
 
