@@ -35,9 +35,10 @@ void FuncInfo::addChild(BPatch_function* func) { children.push_back(func); }
 
 void DynProf::recordFunc(BPatch_function* func) {
     BPatch_variableExpr* id = app->malloc(*app->getImage()->findType("int"));
+    BPatch_variableExpr* type = app->malloc(*app->getImage()->findType("bool"));
     BPatch_variableExpr* before = app->malloc(*timespec_struct);
     BPatch_variableExpr* after = app->malloc(*timespec_struct);
-    func_map.insert(std::make_pair(func, new FuncInfo(id, before, after)));
+    func_map.insert(std::make_pair(func, new FuncInfo(id, type, before, after)));
 }
 
 void DynProf::enum_subroutines(BPatch_function* func) {
@@ -65,6 +66,7 @@ void DynProf::enum_subroutines(BPatch_function* func) {
 #if DEBUG
                 std::cout << "Visited subroutine " << subfunc->getName() << std::endl;
 #endif
+                // FIXME: save children to output file.
                 func_map[func]->addChild(subfunc);
                 enum_subroutines(subfunc);
             }
@@ -101,13 +103,12 @@ BPatch_funcCallExpr* DynProf::writeSnippet(BPatch_snippet* ptr, size_t len) {
 }
 
 bool DynProf::createBeforeSnippet(BPatch_function* func) {
+    std::string name = func->getName();
     std::unique_ptr<std::vector<BPatch_point*>> entry_points(func->findPoint(BPatch_entry));
     if (!entry_points || entry_points->size() == 0) {
-        std::cerr << "Could not find entry point for " << func->getName() << std::endl;
+        std::cerr << "Could not find entry point for " << name << std::endl;
         return false;
     }
-
-    std::string name = func->getName();
 
     std::vector<BPatch_snippet*> entry_vec;
 #if DEBUG
@@ -132,10 +133,13 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
     entry_vec.push_back(
         writeSnippet(new BPatch_arithExpr(BPatch_addr, *func_map[func]->id), sizeof(int)));
 
-    // Increment id
-    entry_vec.push_back(new BPatch_arithExpr(
-        BPatch_assign, *func_map[func]->id,
-        BPatch_arithExpr(BPatch_plus, *func_map[func]->id, BPatch_constExpr(1))));
+    // Next call is going to be an exit snippet.
+    entry_vec.push_back(
+        new BPatch_arithExpr(BPatch_assign, *func_map[func]->type, BPatch_constExpr(true)));
+
+    // type of this call
+    entry_vec.push_back(
+        writeSnippet(new BPatch_arithExpr(BPatch_addr, *func_map[func]->type), sizeof(bool)));
 
     // Function name (with trailing null)
     entry_vec.push_back(writeSnippet(new BPatch_constExpr(name.c_str()), name.size() + 1));
@@ -149,9 +153,10 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
 }
 
 bool DynProf::createAfterSnippet(BPatch_function* func) {
+    std::string name = func->getName();
     std::unique_ptr<std::vector<BPatch_point*>> exit_points(func->findPoint(BPatch_exit));
     if (!exit_points || exit_points->size() == 0) {
-        std::cerr << "Could not find exit point for " << func->getName() << std::endl;
+        std::cerr << "Could not find exit point for " << name << std::endl;
         return false;
     }
 
@@ -163,16 +168,41 @@ bool DynProf::createAfterSnippet(BPatch_function* func) {
     exit_vec.push_back(new BPatch_funcCallExpr(*printf_func, exit_args));
 #endif
 
+    // The snippets are sorted in reverse order here.
+
+    // Time at end of function
+    exit_vec.push_back(writeSnippet(func_map[func]->after, sizeof(struct timespec)));
+
+    // Calculate time at start of function
     std::vector<BPatch_snippet*> clock_args;
     clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
     clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map[func]->after));
     exit_vec.push_back(new BPatch_funcCallExpr(*clock_func, clock_args));
 
-    // FIXME: write to output file.
+    // Increment id for next call
+    exit_vec.push_back(new BPatch_arithExpr(
+        BPatch_assign, *func_map[func]->id,
+        BPatch_arithExpr(BPatch_plus, *func_map[func]->id, BPatch_constExpr(1))));
 
-    BPatch_sequence exit_seq(exit_vec);
+    // Unique id for this call
+    exit_vec.push_back(
+        writeSnippet(new BPatch_arithExpr(BPatch_addr, *func_map[func]->id), sizeof(int)));
+
+    // Next call (if any) is going to be an entry snippet.
+    exit_vec.push_back(
+        new BPatch_arithExpr(BPatch_assign, *func_map[func]->type, BPatch_constExpr(false)));
+
+    // type of this call
+    exit_vec.push_back(
+        writeSnippet(new BPatch_arithExpr(BPatch_addr, *func_map[func]->type), sizeof(bool)));
+
+    // Function name (with trailing null)
+    exit_vec.push_back(writeSnippet(new BPatch_constExpr(name.c_str()), name.size() + 1));
+
     for (auto exit_point : *exit_points) {
-        app->insertSnippet(exit_seq, *exit_point, BPatch_callAfter);
+        for (auto exit_snip : exit_vec) {
+            app->insertSnippet(*exit_snip, *exit_point, BPatch_callAfter);
+        }
     }
     return true;
 }
@@ -200,7 +230,7 @@ void DynProf::registerCleanupSnippet() {
 }
 
 void DynProf::createSnippets(BPatch_function* func) {
-    // FIXME: do one insertion set for all the snippets?
+    // TODO: do one insertion set for all the snippets?
     app->beginInsertionSet();
 
     if (!createBeforeSnippet(func) || !createAfterSnippet(func)) {
@@ -250,7 +280,7 @@ void DynProf::find_funcs() {
     }
     write_func = funcs->at(0);
 
-#if 1  // FIXME: only enable when DEBUG
+#if DEBUG
     printf_func = get_function("printf", true);
 #endif
 }

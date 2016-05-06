@@ -63,6 +63,7 @@ static int read_file(char* fname) {
     }
     std::cerr << "Profiling Summary from " << fname << std::endl;
     std::cerr << "time\tseconds\t\tseconds\t\t\tcalls\tname" << std::endl;
+    bool type;
     struct timespec t;
     memset(&t, 0, sizeof(struct timespec));
     while (true) {
@@ -71,6 +72,11 @@ static int read_file(char* fname) {
                 goto out;
             }
             std::cerr << "Could not read name" << std::endl;
+            ret = -1;
+            goto out;
+        }
+        if (!read_obj(f, &type, sizeof(bool))) {
+            std::cerr << "Could not read type" << std::endl;
             ret = -1;
             goto out;
         }
@@ -84,7 +90,8 @@ static int read_file(char* fname) {
             ret = -1;
             goto out;
         }
-        std::cerr << name << ":" << id << ":" << t.tv_sec << ":" << t.tv_nsec << std::endl;
+        std::cerr << name << ":" << (type ? "after" : "before") << ":" << id << ":" << t.tv_sec
+                  << ":" << t.tv_nsec << std::endl;
     }
 out:
     free(name);
@@ -98,10 +105,9 @@ int main(int argc, char* argv[]) {
         return -1;
     }
     int ret = 0;
-    for(int i = 1; i < argc; i++) {
-      ret = read_file(argv[i]);
-      if(ret)
-          return ret;
+    for (int i = 1; i < argc; i++) {
+        ret = read_file(argv[i]);
+        if (ret) return ret;
     }
     return ret;
 }

@@ -36,12 +36,14 @@ std::string resolve_path(std::string file);
 
 class FuncInfo {
    public:
-    FuncInfo(BPatch_variableExpr* _id, BPatch_variableExpr* _before, BPatch_variableExpr* _after)
-        : id(_id), before(_before), after(_after), children() {}
+    FuncInfo(BPatch_variableExpr* _id, BPatch_variableExpr* _type, BPatch_variableExpr* _before,
+             BPatch_variableExpr* _after)
+        : id(_id), type(_type), before(_before), after(_after), children() {}
     FuncInfo(const FuncInfo&) = delete;
     FuncInfo& operator=(const FuncInfo&) = delete;
     void addChild(BPatch_function* func);
     BPatch_variableExpr* const id;
+    BPatch_variableExpr* const type;
     BPatch_variableExpr* const before;
     BPatch_variableExpr* const after;
 
