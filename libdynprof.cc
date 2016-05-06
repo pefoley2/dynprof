@@ -40,7 +40,7 @@ void __dynprof_register_handler() {
         std::cerr << "Failed to open output file." << std::endl;
         exit(1);
     }
-    if (write(fd, header.c_str(), header.length()) < 0) {
+    if (write(fd, header.c_str(), header.length() + 1) < 0) {
         std::cerr << "Failed to write header to output file." << std::endl;
         exit(1);
     }

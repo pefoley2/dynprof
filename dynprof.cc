@@ -116,27 +116,34 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
     entry_args.push_back(new BPatch_constExpr(name.c_str()));
     entry_vec.push_back(new BPatch_funcCallExpr(*printf_func, entry_args));
 #endif
-    // Include \0
-    entry_vec.push_back(writeSnippet(new BPatch_constExpr(name.c_str()), name.size() + 1));
 
-    entry_vec.push_back(new BPatch_arithExpr(
-        BPatch_assign, *func_map[func]->id,
-        BPatch_arithExpr(BPatch_plus, *func_map[func]->id, BPatch_constExpr(1))));
+    // The snippets are sorted in reverse order here.
 
+    // Time at start of function
+    entry_vec.push_back(writeSnippet(func_map[func]->before, sizeof(struct timespec)));
+
+    // Calculate time at start of function
     std::vector<BPatch_snippet*> clock_args;
     clock_args.push_back(new BPatch_constExpr(CLOCK_MONOTONIC));
     clock_args.push_back(new BPatch_arithExpr(BPatch_addr, *func_map[func]->before));
     entry_vec.push_back(new BPatch_funcCallExpr(*clock_func, clock_args));
 
-    // FIXME: entry_vec.push_back(writeSnippet(new BPatch_constExpr(strlen(name.c_str())),
-    // sizeof(size_t)));
-    // BPatch_constExpr id_expr(func_map[func]->id);
-    // FIXME: entry_vec.push_back(writeSnippet(func_map[func]->id, sizeof(int)));
-    entry_vec.push_back(writeSnippet(func_map[func]->before, sizeof(struct timespec)));
+    // Unique id for this call
+    entry_vec.push_back(
+        writeSnippet(new BPatch_arithExpr(BPatch_addr, *func_map[func]->id), sizeof(int)));
 
-    BPatch_sequence entry_seq(entry_vec);
+    // Increment id
+    entry_vec.push_back(new BPatch_arithExpr(
+        BPatch_assign, *func_map[func]->id,
+        BPatch_arithExpr(BPatch_plus, *func_map[func]->id, BPatch_constExpr(1))));
+
+    // Function name (with trailing null)
+    entry_vec.push_back(writeSnippet(new BPatch_constExpr(name.c_str()), name.size() + 1));
+
     for (auto entry_point : *entry_points) {
-        app->insertSnippet(entry_seq, *entry_point, BPatch_callBefore);
+        for (auto entry_snip : entry_vec) {
+            app->insertSnippet(*entry_snip, *entry_point, BPatch_callBefore);
+        }
     }
     return true;
 }

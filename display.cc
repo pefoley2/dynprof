@@ -23,7 +23,9 @@
 
 static void usage() { std::cerr << "Usage: ./display out_dynprof.*" << std::endl; }
 
-static char expected_header[] = "DYNPROF:1\0";
+#define HEADER_SIZE 11
+
+static char expected_header[HEADER_SIZE] = "DYNPROF:1\0";
 
 static bool read_obj(FILE* f, void* ptr, size_t len) {
     if (ferror(f)) {
@@ -46,13 +48,14 @@ int main(int argc, char* argv[]) {
     }
     int ret = 0;
     char* name = nullptr;
+    size_t name_len = 0;
     FILE* f = fopen(argv[1], "r");
     if (!f) {
         std::cerr << "Failed to open: " << argv[1] << std::endl;
         return -1;
     }
-    char header[10];
-    if (!fgets(header, 10, f)) {
+    char header[HEADER_SIZE];
+    if (!fgets(header, HEADER_SIZE, f)) {
         std::cerr << "Failed to read header" << std::endl;
         ret = -1;
         goto out;
@@ -65,16 +68,12 @@ int main(int argc, char* argv[]) {
     std::cerr << "Profiling Summary:" << std::endl;
     std::cerr << "time\tseconds\t\tseconds\t\t\tcalls\tname" << std::endl;
     struct timespec t;
-    size_t name_len;
     int id;
-    while (!feof(f)) {
-        if (!read_obj(f, &name_len, sizeof(size_t))) {
-            std::cerr << "Could not read name length" << std::endl;
-            ret = -1;
-            goto out;
-        }
-        name = static_cast<char*>(malloc(name_len));
-        if (!read_obj(f, name, name_len)) {
+    while (true) {
+        if (getdelim(&name, &name_len, '\0', f) < 0) {
+            if (feof(f)) {
+                goto out;
+            }
             std::cerr << "Could not read name" << std::endl;
             ret = -1;
             goto out;
@@ -90,8 +89,6 @@ int main(int argc, char* argv[]) {
             goto out;
         }
         std::cerr << name << ":" << id << ":" << t.tv_sec << ":" << t.tv_nsec << std::endl;
-        free(name);
-        name = nullptr;
     }
 out:
     free(name);
