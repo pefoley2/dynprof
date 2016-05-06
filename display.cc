@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
         usage();
         return -1;
     }
-    int ret = 0;
+    int ret = 0, id = 0;
     char* name = nullptr;
     size_t name_len = 0;
     FILE* f = fopen(argv[1], "r");
@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
     std::cerr << "Profiling Summary:" << std::endl;
     std::cerr << "time\tseconds\t\tseconds\t\t\tcalls\tname" << std::endl;
     struct timespec t;
-    int id;
+    memset(&t, 0, sizeof(struct timespec));
     while (true) {
         if (getdelim(&name, &name_len, '\0', f) < 0) {
             if (feof(f)) {
