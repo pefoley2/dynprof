@@ -75,6 +75,6 @@ output: display
 	./display $(firstword $(wildcard out_dynprof.*))
 
 clean:
-	rm -rf *.o *.so dyninst.h.gch display dynprof test_dynprof example/test example/time work
+	rm -rf *.o *.so out_dynprof.* dyninst.h.gch display dynprof test_dynprof example/test example/time work
 
 .PHONY: all format analyze tidy test binary run clean output
