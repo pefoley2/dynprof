@@ -41,17 +41,13 @@ static bool read_obj(FILE* f, void* ptr, size_t len) {
     return true;
 }
 
-int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        usage();
-        return -1;
-    }
+static int read_file(char* fname) {
     int ret = 0, id = 0;
     char* name = nullptr;
     size_t name_len = 0;
-    FILE* f = fopen(argv[1], "r");
+    FILE* f = fopen(fname, "r");
     if (!f) {
-        std::cerr << "Failed to open: " << argv[1] << std::endl;
+        std::cerr << "Failed to open: " << fname << std::endl;
         return -1;
     }
     char header[HEADER_SIZE];
@@ -65,7 +61,7 @@ int main(int argc, char* argv[]) {
         ret = -1;
         goto out;
     }
-    std::cerr << "Profiling Summary:" << std::endl;
+    std::cerr << "Profiling Summary from " << fname << std::endl;
     std::cerr << "time\tseconds\t\tseconds\t\t\tcalls\tname" << std::endl;
     struct timespec t;
     memset(&t, 0, sizeof(struct timespec));
@@ -93,5 +89,19 @@ int main(int argc, char* argv[]) {
 out:
     free(name);
     fclose(f);
+    return ret;
+}
+
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        usage();
+        return -1;
+    }
+    int ret = 0;
+    for(int i = 1; i < argc; i++) {
+      ret = read_file(argv[i]);
+      if(ret)
+          return ret;
+    }
     return ret;
 }

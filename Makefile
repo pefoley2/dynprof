@@ -72,7 +72,7 @@ run: test_dynprof
 	./test_dynprof
 
 output: display
-	./display $(firstword $(wildcard out_dynprof.*))
+	./display out_dynprof.*
 
 clean:
 	rm -rf *.o *.so out_dynprof.* dyninst.h.gch display dynprof test_dynprof example/test example/time work
