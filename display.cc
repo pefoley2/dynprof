@@ -18,6 +18,7 @@
  */
 
 #include <iostream>
+#include <iomanip>
 #include <cstdio>
 #include <cstring>
 #include <memory>
@@ -65,12 +66,14 @@ static double elapsed_time(CallPair calls) {
 static void process_output(FuncMap funcs) {
     std::cerr << "%\tcummulative\tself" << std::endl;
     std::cerr << "time\tseconds\t\tseconds\t\tcalls\tname" << std::endl;
+    //double total = elapsed_time(funcs["main"].at(0));
     for(auto func: funcs) {
-        double total = 0;
+        double ftime = 0;
         for(auto call: func.second) {
-            total += elapsed_time(call.second);
+            std::cerr << func.first << ":" << call.first << std::endl; // FIXME: main is broken
+            ftime += elapsed_time(call.second);
         }
-        std::cerr << "FOO" << "\t" << "FOO" << "\t\t" << total << "\t" << func.second.size() << "\t" << func.first << std::endl;
+        std::cerr << std::fixed << "FOO" << "\t" << "FOO" << "\t\t" << ftime << "\t" << func.second.size() << "\t" << func.first << std::endl;
     }
 }
 

@@ -47,10 +47,8 @@ void DynProf::enum_subroutines(BPatch_function* func) {
         return;
     }
     recordFunc(func);
-    if (func->getName() != DEFAULT_ENTRY_POINT) {
-        // Register entry/exit snippets.
-        createSnippets(func);
-    }
+    // Register entry/exit snippets.
+    createSnippets(func);
     std::unique_ptr<std::vector<BPatch_point*>> subroutines(func->findPoint(BPatch_subroutine));
     if (!subroutines) {
         // This function doesn't call any others.
