@@ -48,22 +48,27 @@ struct FuncCall {
      struct timespec time;
 };
 
-
-typedef std::unordered_map<int, std::pair<FuncCall, FuncCall>> CallMap;
+typedef std::pair<FuncCall, FuncCall> CallPair;
+typedef std::unordered_map<int, CallPair> CallMap;
 typedef std::unordered_map<std::string, CallMap> FuncMap;
+
+static double elapsed_time(CallPair calls) {
+    struct timespec before = calls.first.time, after = calls.second.time;
+    if(after.tv_nsec > before.tv_nsec) {
+        return (after.tv_sec - before.tv_sec) + (after.tv_nsec - before.tv_nsec) / 1e9;
+    } else {
+        return (after.tv_sec - before.tv_sec - 1) + (after.tv_nsec - before.tv_nsec + 1e9) / 1e9;
+    }
+
+}
 
 static void process_output(FuncMap funcs) {
     std::cerr << "time\tseconds\t\tseconds\t\t\tcalls\tname" << std::endl;
     for(auto func: funcs) {
         std::cerr << func.first << ":";
         for(auto call: func.second) {
-            FuncCall before = call.second.first, after = call.second.second;
-            std::cerr << "before(" << call.first
-                    << ":" << before.time.tv_sec
-                    << ":" << before.time.tv_nsec << "),";
-            std::cerr << "after(" << call.first
-                    << ":" << after.time.tv_sec
-                    << ":" << after.time.tv_nsec << "),";
+            std::cerr << "elapsed(" << call.first << ":"
+                << elapsed_time(call.second) << ")";
         }
         std::cerr << std::endl;
     }
@@ -123,10 +128,10 @@ static int read_file(char* fname) {
         if(funcs->at(name).count(id) == 0) {
           funcs->at(name).insert(std::make_pair(id, std::make_pair(FuncCall{}, FuncCall{})));
         }
-        if(type) {
-          funcs->at(name).at(id).first.time = t;
-        } else {
+        if(type) { // after
           funcs->at(name).at(id).second.time = t;
+        } else {
+          funcs->at(name).at(id).first.time = t;
         }
     }
 out:
