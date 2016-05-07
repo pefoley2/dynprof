@@ -63,7 +63,7 @@ void Output::process_output(FuncMap funcs) {
             ftime += elapsed_time(call.second);
         }
         std::cerr << std::fixed << std::setprecision(2) << (ftime / total * 100) << "\t"
-                  << "FOO"
+                  << "TODO"
                   << "\t\t" << std::setprecision(5) << ftime << "\t\t" << func.second.size() << "\t"
                   << func.first << std::endl;
     }
