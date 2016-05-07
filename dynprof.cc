@@ -228,7 +228,7 @@ void DynProf::registerCleanupSnippet() {
 }
 
 void DynProf::createSnippets(BPatch_function* func) {
-    // TODO: do one insertion set for all the snippets?
+    // TODO(peter): do one insertion set for all the snippets?
     app->beginInsertionSet();
 
     if (!createBeforeSnippet(func) || !createAfterSnippet(func)) {

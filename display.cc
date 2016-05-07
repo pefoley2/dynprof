@@ -46,7 +46,7 @@ static bool read_obj(FILE* f, void* ptr, size_t len) {
 }
 
 struct FuncCall {
-     struct timespec time;
+    struct timespec time;
 };
 
 typedef std::pair<FuncCall, FuncCall> CallPair;
@@ -55,25 +55,27 @@ typedef std::unordered_map<std::string, CallMap> FuncMap;
 
 static double elapsed_time(CallPair calls) {
     struct timespec before = calls.first.time, after = calls.second.time;
-    if(after.tv_nsec > before.tv_nsec) {
+    if (after.tv_nsec > before.tv_nsec) {
         return (after.tv_sec - before.tv_sec) + (after.tv_nsec - before.tv_nsec) / 1e9;
-    } else {
-        return (after.tv_sec - before.tv_sec - 1) + (after.tv_nsec - before.tv_nsec + 1e9) / 1e9;
     }
-
+    return (after.tv_sec - before.tv_sec - 1) + (after.tv_nsec - before.tv_nsec + 1e9) / 1e9;
 }
 
 static void process_output(FuncMap funcs) {
     std::cerr << "%\tcummulative\tself" << std::endl;
     std::cerr << "time\tseconds\t\tseconds\t\tcalls\tname" << std::endl;
-    //double total = elapsed_time(funcs["main"].at(0));
-    for(auto func: funcs) {
+    // double total = elapsed_time(funcs["main"].at(0));
+    for (auto func : funcs) {
         double ftime = 0;
-        for(auto call: func.second) {
-            std::cerr << func.first << ":" << call.first << std::endl; // FIXME: main is broken
+        for (auto call : func.second) {
+            std::cerr << func.first << ":" << call.first << std::endl;  // FIXME: main is broken
             ftime += elapsed_time(call.second);
         }
-        std::cerr << std::fixed << "FOO" << "\t" << "FOO" << "\t\t" << ftime << "\t" << func.second.size() << "\t" << func.first << std::endl;
+        std::cerr << std::fixed << "FOO"
+                  << "\t"
+                  << "FOO"
+                  << "\t\t" << ftime << "\t" << func.second.size() << "\t" << func.first
+                  << std::endl;
     }
 }
 
@@ -81,6 +83,7 @@ static int read_file(char* fname) {
     int ret = 0, id = 0;
     char* name = nullptr;
     size_t name_len = 0;
+    bool type = false;
     std::unique_ptr<FuncMap> funcs(new FuncMap);
     FILE* f = fopen(fname, "r");
     if (!f) {
@@ -98,7 +101,6 @@ static int read_file(char* fname) {
         ret = -1;
         goto out;
     }
-    bool type;
     struct timespec t;
     memset(&t, 0, sizeof(struct timespec));
     while (true) {
@@ -125,22 +127,22 @@ static int read_file(char* fname) {
             ret = -1;
             goto out;
         }
-        if(funcs->count(name) == 0) {
-          funcs->insert(std::make_pair(std::string(name), CallMap()));
+        if (funcs->count(name) == 0) {
+            funcs->insert(std::make_pair(std::string(name), CallMap()));
         }
-        if(funcs->at(name).count(id) == 0) {
-          funcs->at(name).insert(std::make_pair(id, std::make_pair(FuncCall{}, FuncCall{})));
+        if (funcs->at(name).count(id) == 0) {
+            funcs->at(name).insert(std::make_pair(id, std::make_pair(FuncCall{}, FuncCall{})));
         }
-        if(type) { // after
-          funcs->at(name).at(id).second.time = t;
+        if (type) {  // after
+            funcs->at(name).at(id).second.time = t;
         } else {
-          funcs->at(name).at(id).first.time = t;
+            funcs->at(name).at(id).first.time = t;
         }
     }
 out:
     free(name);
     fclose(f);
-    if(ret == 0) {
+    if (ret == 0) {
         std::cerr << "Profiling Summary from " << fname << std::endl;
         process_output(*funcs);
     }
