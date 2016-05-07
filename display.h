@@ -41,7 +41,7 @@ typedef std::unordered_map<std::string, CallMap> FuncMap;
 
 class Output {
    public:
-    Output(std::vector<std::string> _args) : args(_args) {}
+    explicit Output(std::vector<std::string> _args) : args(_args) {}
     int process();
 
    private:
