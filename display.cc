@@ -39,10 +39,18 @@ bool Output::read_obj(FILE* f, void* ptr, size_t len) {
 
 double Output::elapsed_time(CallPair calls) {
     struct timespec before = calls.first.time, after = calls.second.time;
+    double elapsed;
     if (after.tv_nsec > before.tv_nsec) {
-        return (after.tv_sec - before.tv_sec) + (after.tv_nsec - before.tv_nsec) / 1e9;
+        elapsed = (after.tv_sec - before.tv_sec) + (after.tv_nsec - before.tv_nsec) / 1e9;
+    } else {
+        elapsed = (after.tv_sec - before.tv_sec - 1) + (after.tv_nsec - before.tv_nsec + 1e9) / 1e9;
     }
-    return (after.tv_sec - before.tv_sec - 1) + (after.tv_nsec - before.tv_nsec + 1e9) / 1e9;
+    if (elapsed < 0) {
+        // FIXME: what is going on here?
+        std::cerr << "ERROR: invalid elapsed time of " << elapsed << std::endl;
+        exit(-1);
+    }
+    return elapsed;
 }
 
 void Output::process_output(FuncMap funcs) {
@@ -54,11 +62,10 @@ void Output::process_output(FuncMap funcs) {
         for (auto call : func.second) {
             ftime += elapsed_time(call.second);
         }
-        std::cerr << std::fixed << std::setprecision(2) << (ftime / total * 100)
-                  << "\t" << "FOO"
-                  << "\t\t" << std::setprecision(5) << ftime
-                  << "\t\t" << func.second.size() << "\t" << func.first
-                  << std::endl;
+        std::cerr << std::fixed << std::setprecision(2) << (ftime / total * 100) << "\t"
+                  << "FOO"
+                  << "\t\t" << std::setprecision(5) << ftime << "\t\t" << func.second.size() << "\t"
+                  << func.first << std::endl;
     }
 }
 
