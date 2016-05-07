@@ -48,7 +48,7 @@ double Output::elapsed_time(CallPair calls) {
 void Output::process_output(FuncMap funcs) {
     std::cerr << "%\tcummulative\tself" << std::endl;
     std::cerr << "time\tseconds\t\tseconds\t\tcalls\tname" << std::endl;
-    // double total = elapsed_time(funcs["main"].at(0));
+    // double total = elapsed_time(funcs[DEFAULT_ENTRY_POINT].at(0));
     for (auto func : funcs) {
         double ftime = 0;
         for (auto call : func.second) {

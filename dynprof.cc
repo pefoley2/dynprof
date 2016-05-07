@@ -225,10 +225,13 @@ void DynProf::registerCleanupSnippet() {
 
     BPatch_function* func = get_function(DEFAULT_ENTRY_POINT);
     std::unique_ptr<std::vector<BPatch_point*>> entry_points(func->findPoint(BPatch_entry));
-    if (!entry_points || entry_points->size() == 0) {
-        std::cerr << "Could not find exactly entry point for " << func->getName() << std::endl;
+    if (!entry_points || entry_points->size() != 1) {
+        std::cerr << "Could not find exactly one entry point for " << func->getName() << std::endl;
         shutdown();
     }
+    BPatch_arithExpr id_snip(BPatch_assign, *func_map[func]->id, BPatch_constExpr(0));
+    app->insertSnippet(id_snip, *entry_points->at(0), BPatch_callBefore);
+
     if (!app->insertSnippet(atexit_reg, *entry_points->at(0), BPatch_callBefore)) {
         std::cerr << "Could not insert atexit snippet." << std::endl;
         shutdown();
