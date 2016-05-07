@@ -17,21 +17,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <iostream>
-#include <iomanip>
-#include <cstdio>
-#include <cstring>
-#include <memory>
-#include <unordered_map>
-#include <vector>
+#include "display.h"
+
+constexpr char Output::expected_header[];
 
 static void usage() { std::cerr << "Usage: ./display out_dynprof.*" << std::endl; }
 
-#define HEADER_SIZE 11
-
-static char expected_header[HEADER_SIZE] = "DYNPROF:1\0";
-
-static bool read_obj(FILE* f, void* ptr, size_t len) {
+bool Output::read_obj(FILE* f, void* ptr, size_t len) {
     if (ferror(f)) {
         return false;
     }
@@ -45,15 +37,7 @@ static bool read_obj(FILE* f, void* ptr, size_t len) {
     return true;
 }
 
-struct FuncCall {
-    struct timespec time;
-};
-
-typedef std::pair<FuncCall, FuncCall> CallPair;
-typedef std::unordered_map<int, CallPair> CallMap;
-typedef std::unordered_map<std::string, CallMap> FuncMap;
-
-static double elapsed_time(CallPair calls) {
+double Output::elapsed_time(CallPair calls) {
     struct timespec before = calls.first.time, after = calls.second.time;
     if (after.tv_nsec > before.tv_nsec) {
         return (after.tv_sec - before.tv_sec) + (after.tv_nsec - before.tv_nsec) / 1e9;
@@ -61,7 +45,7 @@ static double elapsed_time(CallPair calls) {
     return (after.tv_sec - before.tv_sec - 1) + (after.tv_nsec - before.tv_nsec + 1e9) / 1e9;
 }
 
-static void process_output(FuncMap funcs) {
+void Output::process_output(FuncMap funcs) {
     std::cerr << "%\tcummulative\tself" << std::endl;
     std::cerr << "time\tseconds\t\tseconds\t\tcalls\tname" << std::endl;
     // double total = elapsed_time(funcs["main"].at(0));
@@ -79,13 +63,13 @@ static void process_output(FuncMap funcs) {
     }
 }
 
-static int read_file(char* fname) {
+int Output::process_file(std::string fname) {
     int ret = 0, id = 0;
     char* name = nullptr;
     size_t name_len = 0;
     bool type = false;
     std::unique_ptr<FuncMap> funcs(new FuncMap);
-    FILE* f = fopen(fname, "r");
+    FILE* f = fopen(fname.c_str(), "r");
     if (!f) {
         std::cerr << "Failed to open: " << fname << std::endl;
         return -1;
@@ -149,17 +133,25 @@ out:
     return ret;
 }
 
-int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        usage();
-        return -1;
-    }
+int Output::process() {
     int ret = 0;
-    for (int i = 1; i < argc; i++) {
-        ret = read_file(argv[i]);
+    for (auto file : args) {
+        ret = process_file(file);
         if (ret) {
             return ret;
         }
     }
     return ret;
+}
+
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        usage();
+        return -1;
+    }
+    std::vector<std::string> args(argv, argv + argc);
+    // We don't want argv[0]
+    args.erase(args.begin());
+    Output out(args);
+    return out.process();
 }

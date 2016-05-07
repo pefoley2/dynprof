@@ -36,8 +36,8 @@ dynprof.h: dyninst.h.gch
 %.so: %.cc %.h
 	$(CXX) $(filter-out -fsanitize=%,$(CXXFLAGS)) $(LDFLAGS) -shared -o $@ $<
 
-display: display.cc
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
+display: display.cc display.h
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $<
 
 
 %.o: %.cc dynprof.h
