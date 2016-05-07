@@ -63,14 +63,14 @@ static double elapsed_time(CallPair calls) {
 }
 
 static void process_output(FuncMap funcs) {
-    std::cerr << "time\tseconds\t\tseconds\t\t\tcalls\tname" << std::endl;
+    std::cerr << "%\tcummulative\tself" << std::endl;
+    std::cerr << "time\tseconds\t\tseconds\t\tcalls\tname" << std::endl;
     for(auto func: funcs) {
-        std::cerr << func.first << ":";
+        double total = 0;
         for(auto call: func.second) {
-            std::cerr << "elapsed(" << call.first << ":"
-                << elapsed_time(call.second) << ")";
+            total += elapsed_time(call.second);
         }
-        std::cerr << std::endl;
+        std::cerr << "FOO" << "\t" << "FOO" << "\t\t" << total << "\t" << func.second.size() << "\t" << func.first << std::endl;
     }
 }
 
