@@ -97,7 +97,6 @@ class DynProf {
     void doSetup();
     void enum_subroutines(BPatch_function* func);
     void registerCleanupSnippet();
-    void createSnippets(BPatch_function* func);
     void recordFunc(BPatch_function* func);
     [[noreturn]] void shutdown();
     bool createBeforeSnippet(BPatch_function* func);

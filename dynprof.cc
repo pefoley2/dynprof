@@ -48,7 +48,9 @@ void DynProf::enum_subroutines(BPatch_function* func) {
     }
     recordFunc(func);
     // Register entry/exit snippets.
-    createSnippets(func);
+    if (!createBeforeSnippet(func) || !createAfterSnippet(func)) {
+        return;
+    }
     std::unique_ptr<std::vector<BPatch_point*>> subroutines(func->findPoint(BPatch_subroutine));
     if (!subroutines) {
         // This function doesn't call any others.
@@ -88,8 +90,14 @@ void DynProf::hook_functions() {
 #if DEBUG
     std::cerr << "Found entry point " << func->getName() << std::endl;
 #endif
+    app->beginInsertionSet();
+
     enum_subroutines(func);
     registerCleanupSnippet();
+
+    if (!app->finalizeInsertionSet(true)) {
+        std::cerr << "Failed to insert snippets." << std::endl;
+    }
 }
 
 BPatch_funcCallExpr* DynProf::writeSnippet(BPatch_snippet* ptr, size_t len) {
@@ -224,19 +232,6 @@ void DynProf::registerCleanupSnippet() {
     if (!app->insertSnippet(atexit_reg, *entry_points->at(0), BPatch_callBefore)) {
         std::cerr << "Could not insert atexit snippet." << std::endl;
         shutdown();
-    }
-}
-
-void DynProf::createSnippets(BPatch_function* func) {
-    // TODO(peter): do one insertion set for all the snippets?
-    app->beginInsertionSet();
-
-    if (!createBeforeSnippet(func) || !createAfterSnippet(func)) {
-        return;
-    }
-
-    if (!app->finalizeInsertionSet(true)) {
-        std::cerr << "Failed to insert snippets around " << func->getName() << std::endl;
     }
 }
 
