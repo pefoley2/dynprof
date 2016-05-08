@@ -100,6 +100,7 @@ void DynProf::hook_functions() {
     }
 }
 
+// Poor-man's serialization: write(fd, foo, sizeof(struct foo)
 BPatch_funcCallExpr* DynProf::writeSnippet(BPatch_snippet* ptr, size_t len) {
     std::vector<BPatch_snippet*>* name_args = new std::vector<BPatch_snippet*>;
     name_args->push_back(output_var);
@@ -143,7 +144,7 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
     entry_vec.push_back(
         new BPatch_arithExpr(BPatch_assign, *func_map[func]->type, BPatch_constExpr(true)));
 
-    // type of this call
+    // Type of this call
     entry_vec.push_back(
         writeSnippet(new BPatch_arithExpr(BPatch_addr, *func_map[func]->type), sizeof(bool)));
 
@@ -205,6 +206,7 @@ bool DynProf::createAfterSnippet(BPatch_function* func) {
     // Function name (with trailing null)
     exit_vec.push_back(writeSnippet(new BPatch_constExpr(name.c_str()), name.size() + 1));
 
+    // Functions can have multiple exit points.
     for (auto exit_point : *exit_points) {
         for (auto exit_snip : exit_vec) {
             app->insertSnippet(*exit_snip, *exit_point, BPatch_callAfter);
@@ -229,8 +231,13 @@ void DynProf::registerCleanupSnippet() {
         std::cerr << "Could not find exactly one entry point for " << func->getName() << std::endl;
         shutdown();
     }
+    // Need to zero-out the BPatch_variableExprs for main()
     BPatch_arithExpr id_snip(BPatch_assign, *func_map[func]->id, BPatch_constExpr(0));
+    BPatch_arithExpr before_snip(BPatch_assign, *func_map[func]->before, BPatch_constExpr(0));
+    BPatch_arithExpr after_snip(BPatch_assign, *func_map[func]->after, BPatch_constExpr(0));
     app->insertSnippet(id_snip, *entry_points->at(0), BPatch_callBefore);
+    app->insertSnippet(before_snip, *entry_points->at(0), BPatch_callBefore);
+    app->insertSnippet(after_snip, *entry_points->at(0), BPatch_callBefore);
 
     if (!app->insertSnippet(atexit_reg, *entry_points->at(0), BPatch_callBefore)) {
         std::cerr << "Could not insert atexit snippet." << std::endl;
