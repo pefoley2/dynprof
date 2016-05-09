@@ -1,4 +1,4 @@
-# dynprof
+# DynProf
 Dyninst-based gprof equivalent
 
 ## Building
@@ -6,11 +6,13 @@ Run `make`
 
 ## Running
 `export DYNINSTAPI_RT_LIB=/usr/local/lib/libdyninstAPI_RT.so`
-`./dyninst $pid`
+`./dyninst /path/to/binary`
+or `./dyninst --write /path/to/binary && ./dynprof_binary`
+
+## Output
+Run `make output`
 
 ## TODO
-- Handle errors from system functions, especially malloc
-- Use more c++ as opposed to c functionality.
-- Don't leak memory
-- Dynamically loaded code?
-- insertInitCallback/insertFiniCallback
+- Figure out why the elapsed time is sometimes horribly wrong.
+- Figure out why g++ causes the elapsed time to be mis-calculated.
+- Figure out a good way to record parent-child function relationships.
