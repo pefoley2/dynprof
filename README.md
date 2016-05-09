@@ -6,6 +6,7 @@ Run `make`
 
 ## Running
 `export DYNINSTAPI_RT_LIB=/usr/local/lib/libdyninstAPI_RT.so`
+
 `./dyninst /path/to/binary`
 or `./dyninst --write /path/to/binary && ./dynprof_binary`
 
