@@ -34,8 +34,12 @@ std::string resolve_path(std::string file) {
 void FuncInfo::addChild(BPatch_function* func) { children.push_back(func); }
 
 void DynProf::recordFunc(BPatch_function* func) {
-    BPatch_variableExpr* id = app->malloc(*app->getImage()->findType("int"));
-    BPatch_variableExpr* type = app->malloc(*app->getImage()->findType("bool"));
+    BPatch_type* int_type = app->getImage()->findType("int");
+    assert(int_type);
+    BPatch_type* bool_type = app->getImage()->findType("int");
+    assert(bool_type);
+    BPatch_variableExpr* id = app->malloc(*int_type);
+    BPatch_variableExpr* type = app->malloc(*bool_type);
     BPatch_variableExpr* before = app->malloc(*timespec_struct);
     BPatch_variableExpr* after = app->malloc(*timespec_struct);
     func_map.insert(std::make_pair(func, new FuncInfo(id, type, before, after)));

@@ -48,7 +48,7 @@ double Output::elapsed_time(CallPair calls) {
     if (elapsed < 0) {
         // FIXME: what is going on here?
         std::cerr << "ERROR: invalid elapsed time of " << elapsed << std::endl;
-        exit(-1);
+        // exit(-1);
     }
     return elapsed;
 }
