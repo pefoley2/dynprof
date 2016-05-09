@@ -8,7 +8,7 @@ Run `make`
 `export DYNINSTAPI_RT_LIB=/usr/local/lib/libdyninstAPI_RT.so`
 
 `./dyninst /path/to/binary`
-or `./dyninst --write /path/to/binary && ./dynprof_binary`
+or `./dyninst --write /path/to/binary && ./binary_dynprof`
 
 ## Output
 Run `make output`
