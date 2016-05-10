@@ -41,9 +41,9 @@ struct FuncOutput {
     double elapsed;
     size_t calls;
     std::string name;
-    // Default to sorting output by number of calls.
+    // Default to sorting output by percent of total execution time in descending order.
     bool operator<(const FuncOutput &other) {
-        return calls < other.calls;
+        return percent > other.percent;
     }
 };
 

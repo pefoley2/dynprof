@@ -54,8 +54,6 @@ double Output::elapsed_time(CallPair calls) {
 }
 
 void Output::process_output(FuncMap funcs) {
-    std::cerr << "%\tcummulative\tself" << std::endl;
-    std::cerr << "time\tseconds\t\tseconds\t\tcalls\tname" << std::endl;
     double total = elapsed_time(funcs[DEFAULT_ENTRY_POINT].at(0));
     std::vector<FuncOutput> output;
     for (auto func : funcs) {
@@ -65,8 +63,14 @@ void Output::process_output(FuncMap funcs) {
         }
         output.push_back({(ftime / total * 100), ftime, func.second.size(), func.first});
     }
+    std::cerr << "%\tcummulative\tself" << std::endl;
+    std::cerr << "time\tseconds\t\tseconds\t\tcalls\tname" << std::endl;
     std::sort(output.begin(), output.end());
     for(auto func: output) {
+        // FIXME: figure out what's going on here.
+        if(func.percent < 0) {
+            func.percent = func.elapsed = -1;
+        }
         std::cerr << std::fixed << std::setprecision(2) << func.percent << "\t"
             << "TODO"
             << "\t\t" << std::setprecision(5) << func.elapsed << "\t\t" << func.calls << "\t"

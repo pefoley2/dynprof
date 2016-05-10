@@ -11,7 +11,7 @@ ifneq ($(filter clang++,$(CXX)),)
 CXXFLAGS += -Weverything -Wno-c++98-compat
 endif
 
-CXXFLAGS += -ggdb3
+#CXXFLAGS += -ggdb3
 #CXXFLAGS += -O2
 #CXXFLAGS += -flto
 #CXXFLAGS += -floop-interchange -floop-strip-mine -floop-block -fgraphite-identity
