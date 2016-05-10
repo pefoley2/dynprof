@@ -72,8 +72,9 @@ void Output::process_output(FuncMap funcs) {
             func.percent = func.elapsed = -1;
         }
         std::cerr << std::fixed << std::setprecision(2) << func.percent << "\t"
+            << std::setprecision(5) << func.elapsed << "\t\t"
             << "TODO"
-            << "\t\t" << std::setprecision(5) << func.elapsed << "\t\t" << func.calls << "\t"
+            << "\t\t" << func.calls << "\t"
             << func.name << std::endl;
     }
 }
