@@ -19,10 +19,10 @@
 
 #include "libdynprof.h"
 
-int output_fd;
+int __dynprof_output_fd;
 
 static void exit_handler() {
-    if (close(output_fd) < 0) {
+    if (close(__dynprof_output_fd) < 0) {
         std::cerr << "Failed to close output file." << std::endl;
         exit(1);
     }
@@ -34,7 +34,7 @@ void __dynprof_register_handler() {
         exit(1);
     }
     std::string fname = "out_dynprof." + std::to_string(getpid());
-    std::string header = "DYNPROF:" + std::to_string(OUTPUT_VERSION) + "\0";
+    std::string header = "DYNPROF:" + std::to_string(OUTPUT_VERSION) + "000\0";
     int fd = open(fname.c_str(), O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
     if (fd < 0) {
         std::cerr << "Failed to open output file." << std::endl;
@@ -44,5 +44,5 @@ void __dynprof_register_handler() {
         std::cerr << "Failed to write header to output file." << std::endl;
         exit(1);
     }
-    output_fd = fd;
+    __dynprof_output_fd = fd;
 }

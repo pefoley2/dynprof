@@ -28,7 +28,7 @@
 
 #define OUTPUT_VERSION 1
 
-extern int output_fd __attribute__((visibility("default")));
+extern int __dynprof_output_fd __attribute__((visibility("default")));
 
 void __dynprof_register_handler() __attribute__((visibility("default")));
 

@@ -263,7 +263,7 @@ void DynProf::create_structs() {
 
 void DynProf::find_funcs() {
     app->loadLibrary(resolve_path(HELPER_LIB).c_str());
-    output_var = app->getImage()->findVariable("output_fd");
+    output_var = app->getImage()->findVariable("__dynprof_output_fd");
     if (!output_var) {
         std::cerr << "Could not find output var." << std::endl;
         shutdown();

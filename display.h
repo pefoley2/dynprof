@@ -27,7 +27,7 @@
 #include <unordered_map>
 #include <vector>
 
-#define HEADER_SIZE 11
+#define HEADER_SIZE 14
 #define OUTPUT_VERSION "1"
 #define DEFAULT_ENTRY_POINT "main"
 
@@ -50,7 +50,7 @@ class Output {
     double elapsed_time(CallPair calls);
     void process_output(FuncMap funcs);
     std::vector<std::string> args;
-    static constexpr char expected_header[HEADER_SIZE] = "DYNPROF:" OUTPUT_VERSION "\0";
+    static constexpr char expected_header[HEADER_SIZE] = "DYNPROF:" OUTPUT_VERSION "000\0";
 };
 
 #endif
