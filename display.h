@@ -19,6 +19,7 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
+#include <algorithm>
 #include <iostream>
 #include <iomanip>
 #include <cstdio>
@@ -33,6 +34,17 @@
 
 struct FuncCall {
     struct timespec time;
+};
+
+struct FuncOutput {
+    double percent;
+    double elapsed;
+    size_t calls;
+    std::string name;
+    // Default to sorting output by number of calls.
+    bool operator<(const FuncOutput &other) {
+        return calls < other.calls;
+    }
 };
 
 typedef std::pair<FuncCall, FuncCall> CallPair;

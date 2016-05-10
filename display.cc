@@ -57,15 +57,20 @@ void Output::process_output(FuncMap funcs) {
     std::cerr << "%\tcummulative\tself" << std::endl;
     std::cerr << "time\tseconds\t\tseconds\t\tcalls\tname" << std::endl;
     double total = elapsed_time(funcs[DEFAULT_ENTRY_POINT].at(0));
+    std::vector<FuncOutput> output;
     for (auto func : funcs) {
         double ftime = 0;
         for (auto call : func.second) {
             ftime += elapsed_time(call.second);
         }
-        std::cerr << std::fixed << std::setprecision(2) << (ftime / total * 100) << "\t"
-                  << "TODO"
-                  << "\t\t" << std::setprecision(5) << ftime << "\t\t" << func.second.size() << "\t"
-                  << func.first << std::endl;
+        output.push_back({(ftime / total * 100), ftime, func.second.size(), func.first});
+    }
+    std::sort(output.begin(), output.end());
+    for(auto func: output) {
+        std::cerr << std::fixed << std::setprecision(2) << func.percent << "\t"
+            << "TODO"
+            << "\t\t" << std::setprecision(5) << func.elapsed << "\t\t" << func.calls << "\t"
+            << func.name << std::endl;
     }
 }
 
