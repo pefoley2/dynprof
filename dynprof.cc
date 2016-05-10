@@ -273,11 +273,14 @@ void DynProf::find_funcs() {
     std::unique_ptr<std::vector<BPatch_function*>> funcs(new std::vector<BPatch_function*>);
     app->getImage()->findFunction("write", *funcs);
     // glibc has two different internal definitions of write()
+    // Remove the one that causes an undefined reference.
     if (funcs->size() != 1) {
+        char name[5];
         for (size_t i = 0; i < funcs->size(); i++) {
-            if (funcs->at(i)->getName() == "__GI___write") {
+            assert(funcs->at(i)->getModule()->getName(name, 4));
+            if (strcmp(name, "libc")) {
                 funcs->erase(funcs->begin() + static_cast<int64_t>(i));
-                break;
+                i--;
             }
         }
     }
