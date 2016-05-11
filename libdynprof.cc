@@ -28,15 +28,18 @@ static void exit_handler() {
     }
 }
 
-void __dynprof_get_parent() {
+void __dynprof_get_parent(MachRegisterVal sp, MachRegisterVal fp) {
     std::unique_ptr<Walker> w(Walker::newWalker());
     std::string name;
-    /*std::unique_ptr<Frame> parent(Frame::newFrame(ra, sp, fp, w.get()));
+    std::unique_ptr<Frame> parent(new Frame(w.get()));
+    parent->setSP(sp);
+    parent->setFP(fp);
     parent->getName(name);
-    std::cerr << "FOO:" << name << std::endl;*/
+    std::cerr << "FOO:" << name << std::endl;
 
+    
     std::vector<Frame> stack;
-    w->walkStack(stack);
+    w->walkStackFromFrame(stack, *parent);
     for(auto f: stack) {
         f.getName(name);
       std::cerr << "FOO:" << name << ":" << f.nonCall() << std::endl;
