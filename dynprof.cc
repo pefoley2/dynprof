@@ -158,8 +158,8 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
     parent_args.push_back(new BPatch_registerExpr(MachRegister::getReturnAddress(arch)));
     parent_args.push_back(new BPatch_registerExpr(MachRegister::getStackPointer(arch)));
     parent_args.push_back(new BPatch_registerExpr(MachRegister::getFramePointer(arch)));
-    entry_vec.push_back(new BPatch_funcCallExpr(*parent_func, parent_args));
     */
+    entry_vec.push_back(new BPatch_funcCallExpr(*parent_func, {}));
 
     for (auto entry_point : *entry_points) {
         for (auto entry_snip : entry_vec) {

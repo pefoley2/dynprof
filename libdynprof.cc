@@ -28,19 +28,20 @@ static void exit_handler() {
     }
 }
 
-void __dynprof_get_parent(MachRegisterVal ra, MachRegisterVal sp, MachRegisterVal fp) {
+void __dynprof_get_parent() {
     std::unique_ptr<Walker> w(Walker::newWalker());
     std::string name;
-    std::unique_ptr<Frame> parent(Frame::newFrame(ra, sp, fp, w.get()));
+    /*std::unique_ptr<Frame> parent(Frame::newFrame(ra, sp, fp, w.get()));
     parent->getName(name);
-    std::cerr << "FOO:" << name << std::endl;
-    /*
+    std::cerr << "FOO:" << name << std::endl;*/
+
     std::vector<Frame> stack;
     w->walkStack(stack);
     for(auto f: stack) {
         f.getName(name);
       std::cerr << "FOO:" << name << ":" << f.nonCall() << std::endl;
     }
+    /*
     Frame initial, caller;
     if(!w->getInitialFrame(initial)) {
         std::cerr << "Failed to get initial frame." << std::endl;

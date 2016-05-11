@@ -78,6 +78,8 @@ class DynProf {
         // TODO(peter): support windows paths?
         size_t offset = path->rfind("/");
         executable = path->substr(offset + 1);
+        // We need to be able to walk the stack to track parent<->child relationships.
+        bpatch.setInstrStackFrames(true);
     }
     DynProf(const DynProf&) = delete;
     DynProf& operator=(const DynProf&) = delete;

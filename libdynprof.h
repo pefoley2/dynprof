@@ -32,13 +32,12 @@
 #define OUTPUT_VERSION 1
 #define EXPORT __attribute((visibility("default")))
 
-using Dyninst::MachRegisterVal;
 using Dyninst::Stackwalker::Frame;
 using Dyninst::Stackwalker::Walker;
 
 EXPORT extern int __dynprof_output_fd;
 
 EXPORT void __dynprof_register_handler();
-EXPORT void __dynprof_get_parent(MachRegisterVal ra, MachRegisterVal sp, MachRegisterVal fp);
+EXPORT void __dynprof_get_parent();
 
 #endif
