@@ -128,7 +128,6 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
 #endif
 
     // The snippets are sorted in reverse order here.
-    //entry_vec.push_back(new BPatch_funcCallExpr(*parent_func, {}));
 
     // Time at start of function
     entry_vec.push_back(writeSnippet(func_map[func]->before, sizeof(struct timespec)));
@@ -153,6 +152,7 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
 
     // Function name (with trailing null)
     entry_vec.push_back(writeSnippet(new BPatch_constExpr(name.c_str()), name.size() + 1));
+    entry_vec.push_back(new BPatch_funcCallExpr(*parent_func, {}));
 
     for (auto entry_point : *entry_points) {
         for (auto entry_snip : entry_vec) {
@@ -293,13 +293,13 @@ void DynProf::find_funcs() {
 void DynProf::start() {
     std::cerr << "Preparing to profile " << *path << std::endl;
     app = bpatch.processCreate(path->c_str(), params);
-    doSetup();
     if (static_cast<BPatch_process*>(app)->isMultithreadCapable()) {
         // TODO(peter): handle entry points other than main().
         // app->getThreads()
         std::cerr << "Multithreading is not yet handled." << std::endl;
         shutdown();
     }
+    doSetup();
     std::cerr << "Resuming execution" << std::endl;
     static_cast<BPatch_process*>(app)->continueExecution();
 }

@@ -22,7 +22,7 @@ endif
 
 MAKEFLAGS=rR
 
-LDFLAGS := $(strip $(LDFLAGS) -Wl,-O1 -Wl,--as-needed)
+LDFLAGS := $(strip $(LDFLAGS) -Wl,-O1 -Wl,--as-needed -Wl,--no-undefined)
 
 all: dynprof display libdynprof.so example/test example/time
 
@@ -35,7 +35,7 @@ example/%: example/%.cc
 dynprof.h: dyninst.h.gch
 
 %.so: %.cc %.h
-	$(CXX) $(filter-out -fsanitize=%,$(CXXFLAGS)) $(LDFLAGS) -shared -o $@ $<
+	$(CXX) $(filter-out -fsanitize=%,$(CXXFLAGS)) -lstackwalk $(LDFLAGS) -shared -o $@ $<
 
 display: display.cc display.h
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $<

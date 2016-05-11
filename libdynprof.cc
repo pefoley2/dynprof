@@ -34,6 +34,13 @@ static void exit_handler() {
 void __dynprof_get_parent() {
         Walker* w = Walker::newWalker();
         std::string name;
+        std::vector<Frame> stack;
+        w->walkStack(stack);
+        for(auto f: stack) {
+            f.getName(name);
+          std::cerr << "FOO:" << name << ":" << f.nonCall() << std::endl;
+        }
+        /*
         Frame initial, caller;
         if(!w->getInitialFrame(initial)) {
             std::cerr << "Failed to get initial frame." << std::endl;
@@ -45,7 +52,7 @@ void __dynprof_get_parent() {
         }
         if(!caller.getName(name)) {
             std::cerr << "Failed to get name." << std::endl;
-        }
+        }*/
         std::cerr << "FOO:" << name << std::endl;
 }
 
@@ -54,6 +61,7 @@ void __dynprof_register_handler() {
         std::cerr << "Failed to register atexit handler." << std::endl;
         exit(1);
     }
+    __dynprof_get_parent();
     std::string fname = "out_dynprof." + std::to_string(getpid());
     std::string header = "DYNPROF:" + std::to_string(OUTPUT_VERSION) + "000\0";
     int fd = open(fname.c_str(), O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
