@@ -29,8 +29,6 @@ std::string resolve_path(std::string file) {
     return file;
 }
 
-void FuncInfo::addChild(BPatch_function* func) { children.push_back(func); }
-
 void DynProf::recordFunc(BPatch_function* func) {
     BPatch_type* int_type = app->getImage()->findType("int");
     assert(int_type);
@@ -41,6 +39,10 @@ void DynProf::recordFunc(BPatch_function* func) {
     BPatch_variableExpr* before = app->malloc(*timespec_struct);
     BPatch_variableExpr* after = app->malloc(*timespec_struct);
     func_map.insert(std::make_pair(func, new FuncInfo(id, type, before, after)));
+}
+
+void DynProf::save_child(BPatch_function* parent, BPatch_point* child) {
+    std::cerr << "FOO:" << parent->getName() << ":" << child->getCalledFunction()->getName() << std::endl;
 }
 
 void DynProf::enum_subroutines(BPatch_function* func) {
@@ -68,8 +70,7 @@ void DynProf::enum_subroutines(BPatch_function* func) {
 #if DEBUG
                 std::cout << "Visited subroutine " << subfunc->getName() << std::endl;
 #endif
-                // FIXME: save children to output file.
-                func_map[func]->addChild(subfunc);
+                save_child(func, subroutine);
                 enum_subroutines(subfunc);
             }
         }
@@ -128,6 +129,14 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
 #endif
 
     // The snippets are sorted in reverse order here.
+    /*
+    std::vector<BPatch_snippet*> parent_args;
+    //parent_args.push_back(new BPatch_registerExpr(MachRegister::getReturnAddress(arch)));
+    parent_args.push_back(new BPatch_registerExpr(MachRegister::getStackPointer(arch)));
+    parent_args.push_back(new BPatch_registerExpr(MachRegister::getFramePointer(arch)));
+    entry_vec.push_back(new BPatch_funcCallExpr(*parent_func, parent_args));
+    */
+
 
     // Time at start of function
     entry_vec.push_back(writeSnippet(func_map[func]->before, sizeof(struct timespec)));
@@ -152,12 +161,6 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
 
     // Function name (with trailing null)
     entry_vec.push_back(writeSnippet(new BPatch_constExpr(name.c_str()), name.size() + 1));
-
-    std::vector<BPatch_snippet*> parent_args;
-    //parent_args.push_back(new BPatch_registerExpr(MachRegister::getReturnAddress(arch)));
-    parent_args.push_back(new BPatch_registerExpr(MachRegister::getStackPointer(arch)));
-    parent_args.push_back(new BPatch_registerExpr(MachRegister::getFramePointer(arch)));
-    entry_vec.push_back(new BPatch_funcCallExpr(*parent_func, parent_args));
 
     for (auto entry_point : *entry_points) {
         for (auto entry_snip : entry_vec) {

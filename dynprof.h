@@ -43,17 +43,13 @@ class FuncInfo {
    public:
     FuncInfo(BPatch_variableExpr* _id, BPatch_variableExpr* _type, BPatch_variableExpr* _before,
              BPatch_variableExpr* _after)
-        : id(_id), type(_type), before(_before), after(_after), children() {}
+        : id(_id), type(_type), before(_before), after(_after) {}
     FuncInfo(const FuncInfo&) = delete;
     FuncInfo& operator=(const FuncInfo&) = delete;
-    void addChild(BPatch_function* func);
     BPatch_variableExpr* const id;
     BPatch_variableExpr* const type;
     BPatch_variableExpr* const before;
     BPatch_variableExpr* const after;
-
-   private:
-    std::vector<BPatch_function*> children;
 };
 
 typedef std::unordered_map<BPatch_function*, FuncInfo*> FuncMap;
@@ -104,6 +100,7 @@ class DynProf {
     BPatch bpatch;
     FuncMap func_map;
     Architecture arch;
+    void save_child(BPatch_function* parent, BPatch_point* child);
     void hook_functions();
     void create_structs();
     void find_funcs();
