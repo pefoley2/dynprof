@@ -45,7 +45,7 @@ display: display.cc display.h
 	$(CXX) $(CXXFLAGS) -include dyninst.h -c $< -o $@
 
 dynprof: dynprof.o main.o
-	$(CXX) $(CXXFLAGS) -ldyninstAPI -lsymtabAPI $(LDFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) -lcommon -lstackwalk -ldyninstAPI -lsymtabAPI $(LDFLAGS) -o $@ $^
 
 format:
 	clang-format -i -style="{BasedOnStyle: google, IndentWidth: 4, ColumnLimit: 100}" *.cc *.h example/*.cc

@@ -152,7 +152,14 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
 
     // Function name (with trailing null)
     entry_vec.push_back(writeSnippet(new BPatch_constExpr(name.c_str()), name.size() + 1));
-    entry_vec.push_back(new BPatch_funcCallExpr(*parent_func, {}));
+
+    /* FIXME: getReturnAddress() not implemented.
+    std::vector<BPatch_snippet*> parent_args;
+    parent_args.push_back(new BPatch_registerExpr(MachRegister::getReturnAddress(arch)));
+    parent_args.push_back(new BPatch_registerExpr(MachRegister::getStackPointer(arch)));
+    parent_args.push_back(new BPatch_registerExpr(MachRegister::getFramePointer(arch)));
+    entry_vec.push_back(new BPatch_funcCallExpr(*parent_func, parent_args));
+    */
 
     for (auto entry_point : *entry_points) {
         for (auto entry_snip : entry_vec) {
@@ -264,6 +271,12 @@ void DynProf::find_funcs() {
     }
     clock_func = get_function("clock_gettime");
     parent_func = get_function("__dynprof_get_parent");
+    std::unique_ptr<Walker> w(Walker::newWalker());
+    arch = w->getProcessState()->getArchitecture();
+    if(arch != Architecture::Arch_x86_64) {
+        std::cerr << "Only x86_64 currently supported." << std::endl;
+        shutdown();
+    }
 
     std::unique_ptr<std::vector<BPatch_function*>> funcs(new std::vector<BPatch_function*>);
     app->getImage()->findFunction("write", *funcs);

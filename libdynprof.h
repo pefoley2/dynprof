@@ -30,10 +30,15 @@
 #include <walker.h>
 
 #define OUTPUT_VERSION 1
+#define EXPORT __attribute((visibility("default")))
 
-extern int __dynprof_output_fd __attribute__((visibility("default")));
+using Dyninst::MachRegisterVal;
+using Dyninst::Stackwalker::Frame;
+using Dyninst::Stackwalker::Walker;
 
-void __dynprof_register_handler() __attribute__((visibility("default")));
-void __dynprof_get_parent() __attribute__((visibility("default")));
+EXPORT extern int __dynprof_output_fd;
+
+EXPORT void __dynprof_register_handler();
+EXPORT void __dynprof_get_parent(MachRegisterVal ra, MachRegisterVal sp, MachRegisterVal fp);
 
 #endif
