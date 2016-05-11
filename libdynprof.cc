@@ -19,6 +19,9 @@
 
 #include "libdynprof.h"
 
+using Dyninst::Stackwalker::Frame;
+using Dyninst::Stackwalker::Walker;
+
 int __dynprof_output_fd;
 
 static void exit_handler() {
@@ -26,6 +29,24 @@ static void exit_handler() {
         std::cerr << "Failed to close output file." << std::endl;
         exit(1);
     }
+}
+
+void __dynprof_get_parent() {
+        Walker* w = Walker::newWalker();
+        std::string name;
+        Frame initial, caller;
+        if(!w->getInitialFrame(initial)) {
+            std::cerr << "Failed to get initial frame." << std::endl;
+            exit(1);
+        }
+        if(!w->walkSingleFrame(initial, caller)) {
+            std::cerr << "Failed to get caller." << std::endl;
+            exit(1);
+        }
+        if(!caller.getName(name)) {
+            std::cerr << "Failed to get name." << std::endl;
+        }
+        std::cerr << "FOO:" << name << std::endl;
 }
 
 void __dynprof_register_handler() {

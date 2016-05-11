@@ -26,10 +26,14 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <frame.h>
+#include <walker.h>
+
 #define OUTPUT_VERSION 1
 
 extern int __dynprof_output_fd __attribute__((visibility("default")));
 
 void __dynprof_register_handler() __attribute__((visibility("default")));
+void __dynprof_get_parent() __attribute__((visibility("default")));
 
 #endif

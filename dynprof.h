@@ -29,7 +29,7 @@
 #error "Please use Dyninst 9.0 or newer"
 #endif
 
-#define DEBUG 0
+#define DEBUG 1
 #define DEFAULT_ENTRY_POINT "main"
 #define HELPER_LIB "libdynprof.so"
 
@@ -64,6 +64,7 @@ class DynProf {
           timespec_struct(nullptr),
           clock_func(nullptr),
           write_func(nullptr),
+          parent_func(nullptr),
 #if DEBUG
           printf_func(nullptr),
 #endif
@@ -89,6 +90,7 @@ class DynProf {
     BPatch_type* timespec_struct;
     BPatch_function* clock_func;
     BPatch_function* write_func;
+    BPatch_function* parent_func;
 #if DEBUG
     BPatch_function* printf_func;
 #endif

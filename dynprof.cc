@@ -128,6 +128,7 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
 #endif
 
     // The snippets are sorted in reverse order here.
+    //entry_vec.push_back(new BPatch_funcCallExpr(*parent_func, {}));
 
     // Time at start of function
     entry_vec.push_back(writeSnippet(func_map[func]->before, sizeof(struct timespec)));
@@ -218,14 +219,8 @@ bool DynProf::createAfterSnippet(BPatch_function* func) {
 }
 
 void DynProf::registerCleanupSnippet() {
-    std::vector<BPatch_function*> exit_funcs;
-    app->getImage()->findFunction("__dynprof_register_handler", exit_funcs);
-    if (exit_funcs.size() != 1) {
-        std::cerr << "Could not find handler registration function." << std::endl;
-        shutdown();
-    }
-    BPatch_constExpr func_size(func_map.size());
-    BPatch_funcCallExpr atexit_reg(*exit_funcs[0], {&func_size});
+    BPatch_function* exit_func = get_function("__dynprof_register_handler");
+    BPatch_funcCallExpr atexit_reg(*exit_func, {});
 
     BPatch_function* func = get_function(DEFAULT_ENTRY_POINT);
     std::unique_ptr<std::vector<BPatch_point*>> entry_points(func->findPoint(BPatch_entry));
@@ -235,11 +230,12 @@ void DynProf::registerCleanupSnippet() {
     }
     // Need to zero-out the BPatch_variableExprs for main()
     BPatch_arithExpr id_snip(BPatch_assign, *func_map[func]->id, BPatch_constExpr(0));
-    BPatch_arithExpr before_snip(BPatch_assign, *func_map[func]->before, BPatch_constExpr(0));
-    BPatch_arithExpr after_snip(BPatch_assign, *func_map[func]->after, BPatch_constExpr(0));
     app->insertSnippet(id_snip, *entry_points->at(0), BPatch_callBefore);
-    app->insertSnippet(before_snip, *entry_points->at(0), BPatch_callBefore);
-    app->insertSnippet(after_snip, *entry_points->at(0), BPatch_callBefore);
+    // FIXME: needed?
+    // BPatch_arithExpr before_snip(BPatch_assign, *func_map[func]->before, BPatch_constExpr(0));
+    // BPatch_arithExpr after_snip(BPatch_assign, *func_map[func]->after, BPatch_constExpr(0));
+    // app->insertSnippet(before_snip, *entry_points->at(0), BPatch_callBefore);
+    // app->insertSnippet(after_snip, *entry_points->at(0), BPatch_callBefore);
 
     if (!app->insertSnippet(atexit_reg, *entry_points->at(0), BPatch_callBefore)) {
         std::cerr << "Could not insert atexit snippet." << std::endl;
@@ -267,6 +263,7 @@ void DynProf::find_funcs() {
         shutdown();
     }
     clock_func = get_function("clock_gettime");
+    parent_func = get_function("__dynprof_get_parent");
 
     std::unique_ptr<std::vector<BPatch_function*>> funcs(new std::vector<BPatch_function*>);
     app->getImage()->findFunction("write", *funcs);
