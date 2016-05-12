@@ -45,16 +45,13 @@ static std::unique_ptr<std::string> get_path(std::string exe) {
 }
 
 static const char** get_params(std::vector<std::string> args) {
-    char** params = static_cast<char**>(malloc((args.size() + 1) * sizeof(char*)));
+    const char** params = static_cast<const char**>(malloc((args.size() + 1) * sizeof(char*)));
     // Skip the exe, that's resolved by get_path
     for (size_t i = 1; i < args.size(); i++) {
-        size_t arglen = args[i].size() + 1;
-        params[i] = static_cast<char*>(malloc(arglen));
-        memset(params[i], 0, arglen);
-        strncpy(params[i], args[i].c_str(), args[i].size() + 1);
+        params[i] = strdup(args[i].c_str());
     }
     params[args.size()] = nullptr;
-    return const_cast<const char**>(params);
+    return params;
 }
 
 static void usage() {
