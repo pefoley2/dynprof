@@ -19,6 +19,10 @@
 
 #include "dynprof.h"
 
+using Dyninst::Architecture;
+using Dyninst::MachRegister;
+using Dyninst::Stackwalker::Walker;
+
 std::string resolve_path(std::string file) {
     char resolved_path[PATH_MAX];
     if (realpath(file.c_str(), resolved_path)) {

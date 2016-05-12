@@ -33,10 +33,6 @@
 #define DEFAULT_ENTRY_POINT "main"
 #define HELPER_LIB "libdynprof.so"
 
-using Dyninst::Architecture;
-using Dyninst::MachRegister;
-using Dyninst::Stackwalker::Walker;
-
 std::string resolve_path(std::string file);
 
 class FuncInfo {
@@ -99,7 +95,7 @@ class DynProf {
     BPatch_variableExpr* output_var;
     BPatch bpatch;
     FuncMap func_map;
-    Architecture arch;
+    Dyninst::Architecture arch;
     void save_child(BPatch_function* parent, BPatch_point* child);
     void hook_functions();
     void create_structs();

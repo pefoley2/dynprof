@@ -19,6 +19,10 @@
 
 #include "libdynprof.h"
 
+using Dyninst::MachRegisterVal;
+using Dyninst::Stackwalker::Frame;
+using Dyninst::Stackwalker::Walker;
+
 int __dynprof_output_fd;
 
 static void exit_handler() {
