@@ -51,11 +51,11 @@ typedef std::unordered_map<std::string, CallMap> FuncMap;
 
 class Output {
    public:
-    explicit Output(std::vector<std::string> _args) : args(_args) {}
+    explicit Output(std::vector<std::string> _args) : args(std::move(_args)) {}
     int process();
 
    private:
-    int process_file(std::string file);
+    int process_file(std::string fname);
     bool read_obj(FILE* f, void* ptr, size_t len);
     double elapsed_time(CallPair calls);
     void process_output(FuncMap funcs);

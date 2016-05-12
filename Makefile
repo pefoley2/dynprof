@@ -1,4 +1,4 @@
-# FIXME: g++ mis-compiles dynprof.
+# FIXME: g++ apparently mis-compiles dynprof.
 ifeq ($(origin CXX),default)
 CXX = clang++
 endif
@@ -59,7 +59,7 @@ analyze:
 tidy:
 	test -d work || (mkdir work && cd work && cmake ..)
 	make -C work
-	clang-tidy -analyze-temporary-dtors -header-filter='.*' -checks='*,-llvm-header-guard' -p work *.cc
+	clang-tidy -analyze-temporary-dtors -header-filter='.*' -checks='*,-llvm-header-guard,-readability-implicit-bool-cast,-cppcoreguidelines-pro-bounds-array-to-pointer-decay' -p work *.cc
 
 test: all
 	./dynprof example/test

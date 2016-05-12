@@ -106,7 +106,7 @@ void DynProf::hook_functions() {
 
 // Poor-man's serialization: write(fd, foo, sizeof(struct foo)
 BPatch_funcCallExpr* DynProf::writeSnippet(BPatch_snippet* ptr, size_t len) {
-    std::vector<BPatch_snippet*>* name_args = new std::vector<BPatch_snippet*>;
+    auto name_args = new std::vector<BPatch_snippet*>;
     name_args->push_back(output_var);
     name_args->push_back(ptr);
     name_args->push_back(new BPatch_constExpr(len));
@@ -116,7 +116,7 @@ BPatch_funcCallExpr* DynProf::writeSnippet(BPatch_snippet* ptr, size_t len) {
 bool DynProf::createBeforeSnippet(BPatch_function* func) {
     std::string name = func->getName();
     std::unique_ptr<std::vector<BPatch_point*>> entry_points(func->findPoint(BPatch_entry));
-    if (!entry_points || entry_points->size() == 0) {
+    if (!entry_points || entry_points->empty()) {
         std::cerr << "Could not find entry point for " << name << std::endl;
         return false;
     }
@@ -173,7 +173,7 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
 bool DynProf::createAfterSnippet(BPatch_function* func) {
     std::string name = func->getName();
     std::unique_ptr<std::vector<BPatch_point*>> exit_points(func->findPoint(BPatch_exit));
-    if (!exit_points || exit_points->size() == 0) {
+    if (!exit_points || exit_points->empty()) {
         std::cerr << "Could not find exit point for " << name << std::endl;
         return false;
     }
@@ -307,7 +307,7 @@ void DynProf::find_funcs() {
 void DynProf::start() {
     std::cerr << "Preparing to profile " << *path << std::endl;
     app = bpatch.processCreate(path->c_str(), params);
-    if (static_cast<BPatch_process*>(app)->isMultithreadCapable()) {
+    if (dynamic_cast<BPatch_process*>(app)->isMultithreadCapable()) {
         // TODO(peter): handle entry points other than main().
         // app->getThreads()
         std::cerr << "Multithreading is not yet handled." << std::endl;
@@ -315,7 +315,7 @@ void DynProf::start() {
     }
     doSetup();
     std::cerr << "Resuming execution" << std::endl;
-    static_cast<BPatch_process*>(app)->continueExecution();
+    dynamic_cast<BPatch_process*>(app)->continueExecution();
 }
 
 void DynProf::setupBinary() {
@@ -337,10 +337,10 @@ void DynProf::doSetup() {
 }
 
 int DynProf::waitForExit() {
-    while (!static_cast<BPatch_process*>(app)->isTerminated()) {
+    while (!dynamic_cast<BPatch_process*>(app)->isTerminated()) {
         bpatch.waitForStatusChange();
     }
-    int status = static_cast<BPatch_process*>(app)->getExitCode();
+    int status = dynamic_cast<BPatch_process*>(app)->getExitCode();
     std::cerr << "Program exited with status: " << status << std::endl;
     return status;
 }
@@ -361,7 +361,7 @@ void DynProf::update_needed() {
 
 bool DynProf::writeOutput() {
     std::string out_file = executable + "_dynprof";
-    bool status = static_cast<BPatch_binaryEdit*>(app)->writeFile(out_file.c_str());
+    bool status = dynamic_cast<BPatch_binaryEdit*>(app)->writeFile(out_file.c_str());
     if (status) {
         std::cerr << "Modified binary written to: " << out_file << std::endl;
     } else {
@@ -372,7 +372,7 @@ bool DynProf::writeOutput() {
 
 void DynProf::shutdown() {
     if (app && app->getType() == processType::TRADITIONAL_PROCESS) {
-        static_cast<BPatch_process*>(app)->terminateExecution();
+        dynamic_cast<BPatch_process*>(app)->terminateExecution();
     }
     exit(1);
 }
