@@ -20,10 +20,10 @@
 #define DISPLAY_H
 
 #include <algorithm>
-#include <iostream>
-#include <iomanip>
 #include <cstdio>
 #include <cstring>
+#include <iomanip>
+#include <iostream>
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -42,9 +42,7 @@ struct FuncOutput {
     size_t calls;
     std::string name;
     // Default to sorting output by percent of total execution time in descending order.
-    bool operator<(const FuncOutput &other) {
-        return percent > other.percent;
-    }
+    bool operator<(const FuncOutput& other) { return percent > other.percent; }
 };
 
 typedef std::pair<FuncCall, FuncCall> CallPair;

@@ -42,7 +42,8 @@ void DynProf::recordFunc(BPatch_function* func) {
 }
 
 void DynProf::save_child(BPatch_function* parent, BPatch_point* child) {
-    std::cerr << "FOO:" << parent->getName() << ":" << child->getCalledFunction()->getName() << std::endl;
+    std::cerr << "FOO:" << parent->getName() << ":" << child->getCalledFunction()->getName()
+              << std::endl;
 }
 
 void DynProf::enum_subroutines(BPatch_function* func) {
@@ -136,7 +137,6 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
     parent_args.push_back(new BPatch_registerExpr(MachRegister::getFramePointer(arch)));
     entry_vec.push_back(new BPatch_funcCallExpr(*parent_func, parent_args));
     */
-
 
     // Time at start of function
     entry_vec.push_back(writeSnippet(func_map[func]->before, sizeof(struct timespec)));
@@ -274,7 +274,7 @@ void DynProf::find_funcs() {
     parent_func = get_function("__dynprof_get_parent");
     std::unique_ptr<Walker> w(Walker::newWalker());
     arch = w->getProcessState()->getArchitecture();
-    if(arch != Architecture::Arch_x86_64) {
+    if (arch != Architecture::Arch_x86_64) {
         std::cerr << "Only x86_64 currently supported." << std::endl;
         shutdown();
     }

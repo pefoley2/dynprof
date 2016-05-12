@@ -13,4 +13,6 @@ set_property(TARGET libdynprof PROPERTY OUTPUT_NAME dynprof)
 add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
 find_library(DYNINSTAPI_LIBRARY dyninstAPI)
 find_library(SYMTABAPI_LIBRARY symtabAPI)
-target_link_libraries(dynprof ${DYNINSTAPI_LIBRARY} ${SYMTABAPI_LIBRARY})
+find_library(STACKWALK_LIBRARY stackwalk)
+target_link_libraries(dynprof ${DYNINSTAPI_LIBRARY} ${SYMTABAPI_LIBRARY}
+    ${STACKWALK_LIBRARY})

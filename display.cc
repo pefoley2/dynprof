@@ -66,16 +66,15 @@ void Output::process_output(FuncMap funcs) {
     std::cerr << "%\tcummulative\tself" << std::endl;
     std::cerr << "time\tseconds\t\tseconds\t\tcalls\tname" << std::endl;
     std::sort(output.begin(), output.end());
-    for(auto func: output) {
+    for (auto func : output) {
         // FIXME: figure out what's going on here.
-        if(func.percent < 0) {
+        if (func.percent < 0) {
             func.percent = func.elapsed = -1;
         }
         std::cerr << std::fixed << std::setprecision(2) << func.percent << "\t"
-            << std::setprecision(5) << func.elapsed << "\t\t"
-            << "TODO"
-            << "\t\t" << func.calls << "\t"
-            << func.name << std::endl;
+                  << std::setprecision(5) << func.elapsed << "\t\t"
+                  << "TODO"
+                  << "\t\t" << func.calls << "\t" << func.name << std::endl;
     }
 }
 
