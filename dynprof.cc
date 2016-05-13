@@ -46,6 +46,7 @@ void DynProf::recordFunc(BPatch_function* func) {
 }
 
 void DynProf::save_child(BPatch_function* parent, BPatch_point* child) {
+    // TODO: implement
     std::cerr << "FOO:" << parent->getName() << ":" << child->getCalledFunction()->getName()
               << std::endl;
 }
