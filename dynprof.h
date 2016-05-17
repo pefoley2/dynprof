@@ -66,7 +66,8 @@ class DynProf {
 #endif
           output_var(nullptr),
           bpatch(),
-          func_map() {
+          func_map(),
+          arch() {
         // TODO(peter): support windows paths?
         size_t offset = path->rfind("/");
         executable = path->substr(offset + 1);
@@ -96,6 +97,7 @@ class DynProf {
     BPatch bpatch;
     FuncMap func_map;
     Dyninst::Architecture arch;
+    int padding __attribute__((unused));  // FIXME: refactor to avoid?
     void save_child(BPatch_function* parent, BPatch_point* child);
     void hook_functions();
     void create_structs();
