@@ -5,7 +5,7 @@ endif
 
 CXXFLAGS := $(strip $(CXXFLAGS) -fno-exceptions -fvisibility=hidden -march=native -pipe -fPIC)
 CXXFLAGS += -Wall -Wextra -Winvalid-pch -Wpedantic -Weffc++ -D_GLIBCXX_USE_CXX11_ABI=1
-CXXFLAGS += -std=c++11
+CXXFLAGS += -std=c++14
 
 ifneq ($(filter clang++,$(CXX)),)
 CXXFLAGS += -Weverything -Wno-c++98-compat

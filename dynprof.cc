@@ -141,6 +141,7 @@ bool DynProf::createBeforeSnippet(BPatch_function* func) {
     parent_args.push_back(new BPatch_registerExpr(MachRegister::getStackPointer(arch)));
     parent_args.push_back(new BPatch_registerExpr(MachRegister::getFramePointer(arch)));
     entry_vec.push_back(new BPatch_funcCallExpr(*parent_func, parent_args));
+    FIXME: https://github.com/dyninst/dyninst/issues/40#issuecomment-219115905
     */
 
     // Time at start of function
