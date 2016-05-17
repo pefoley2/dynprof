@@ -57,7 +57,7 @@ analyze:
 	done
 
 tidy:
-	test -d work || (mkdir work && cd work && cmake ..)
+	test -d work || (mkdir work && cd work && cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..)
 	make -C work
 	clang-tidy -analyze-temporary-dtors -header-filter='.*' -checks='*,-llvm-header-guard,-readability-implicit-bool-cast,-cppcoreguidelines-pro-bounds-array-to-pointer-decay' -p work *.cc
 

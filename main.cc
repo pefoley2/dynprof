@@ -45,12 +45,11 @@ static std::unique_ptr<std::string> get_path(std::string exe) {
 }
 
 static const char** get_params(std::vector<std::string> args) {
-    const char** params = static_cast<const char**>(malloc((args.size() + 1) * sizeof(char*)));
+    const char** params = static_cast<const char**>(calloc(args.size() + 1, sizeof(char*)));
     // Skip the exe, that's resolved by get_path
     for (size_t i = 1; i < args.size(); i++) {
         params[i] = strdup(args[i].c_str());
     }
-    params[args.size()] = nullptr;
     return params;
 }
 
@@ -81,7 +80,7 @@ int main(int argc, char* argv[]) {
     args.erase(args.begin());
     const char** params = get_params(args);
     // set argv[0] to the original path.
-    params[0] = path->c_str();
+    params[0] = strdup(path->c_str());
     DynProf prof(std::move(path), params);
     if (binary_edit) {
         prof.setupBinary();
