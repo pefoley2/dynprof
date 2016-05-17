@@ -4,7 +4,7 @@ CXX = clang++
 endif
 
 CXXFLAGS := $(strip $(CXXFLAGS) -fno-exceptions -fvisibility=hidden -march=native -pipe -fPIC)
-CXXFLAGS += -Wall -Wextra -Winvalid-pch -Wpedantic -Weffc++ -D_GLIBCXX_USE_CXX11_ABI=0
+CXXFLAGS += -Wall -Wextra -Winvalid-pch -Wpedantic -Weffc++ -D_GLIBCXX_USE_CXX11_ABI=1
 CXXFLAGS += -std=c++11
 
 ifneq ($(filter clang++,$(CXX)),)
