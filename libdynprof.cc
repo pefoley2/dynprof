@@ -43,7 +43,7 @@ void __dynprof_get_parent(MachRegisterVal sp, MachRegisterVal fp) {
 
     std::vector<Frame> stack;
     w->walkStack(stack);
-    for (auto f : stack) {
+    for (const auto& f : stack) {
         f.getName(name);
         std::cerr << "FOO:" << name << ":" << f.nonCall() << std::endl;
     }

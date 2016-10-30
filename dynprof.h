@@ -110,7 +110,7 @@ class DynProf {
     [[noreturn]] void shutdown();
     bool createBeforeSnippet(BPatch_function* func);
     bool createAfterSnippet(BPatch_function* func);
-    BPatch_function* get_function(std::string name, bool uninstrumentable = false);
+    BPatch_function* get_function(const std::string& name, bool uninstrumentable = false);
     BPatch_funcCallExpr* writeSnippet(BPatch_snippet* ptr, size_t len);
 };
 

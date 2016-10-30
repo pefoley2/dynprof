@@ -20,7 +20,6 @@
 #include "dynprof.h"
 
 using Dyninst::Architecture;
-using Dyninst::MachRegister;
 using Dyninst::Stackwalker::Walker;
 
 std::string resolve_path(std::string file) {
@@ -83,7 +82,7 @@ void DynProf::enum_subroutines(BPatch_function* func) {
     }
 }
 
-BPatch_function* DynProf::get_function(std::string name, bool uninstrumentable) {
+BPatch_function* DynProf::get_function(const std::string& name, bool uninstrumentable) {
     std::unique_ptr<std::vector<BPatch_function*>> funcs(new std::vector<BPatch_function*>);
     // Should only return one function.
     app->getImage()->findFunction(name.c_str(), *funcs, true, true, uninstrumentable);

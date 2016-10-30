@@ -78,7 +78,7 @@ void Output::process_output(FuncMap funcs) {
     }
 }
 
-int Output::process_file(std::string fname) {
+int Output::process_file(const std::string& fname) {
     int ret = 0, id = 0;
     char* name = nullptr;
     size_t name_len = 0;
@@ -95,13 +95,12 @@ int Output::process_file(std::string fname) {
         ret = -1;
         goto out;
     }
-    if (strcmp(header, expected_header)) {
+    if (strcmp(header, expected_header) != 0) {
         std::cerr << "Invalid header:" << header << std::endl;
         ret = -1;
         goto out;
     }
-    struct timespec t;
-    memset(&t, 0, sizeof(struct timespec));
+    struct timespec t{};
     while (true) {
         if (getdelim(&name, &name_len, '\0', f) < 0) {
             if (feof(f)) {
@@ -150,7 +149,7 @@ out:
 
 int Output::process() {
     int ret = 0;
-    for (auto file : args) {
+    for (const auto& file : args) {
         ret = process_file(file);
         if (ret) {
             return ret;

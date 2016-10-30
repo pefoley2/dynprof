@@ -21,7 +21,7 @@
 
 #include "dynprof.h"  // for DynProf
 
-static std::unique_ptr<std::string> get_path(std::string exe) {
+static std::unique_ptr<std::string> get_path(const std::string& exe) {
     std::unique_ptr<std::string> path(new std::string);
     path->assign(getenv("PATH"));
     std::unique_ptr<std::string> fullpath(new std::string);

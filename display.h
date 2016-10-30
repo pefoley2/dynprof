@@ -55,7 +55,7 @@ class Output {
     int process();
 
    private:
-    int process_file(std::string fname);
+    int process_file(const std::string& fname);
     bool read_obj(FILE* f, void* ptr, size_t len);
     double elapsed_time(CallPair calls);
     void process_output(FuncMap funcs);
