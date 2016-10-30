@@ -68,7 +68,7 @@ void __dynprof_register_handler() {
         exit(1);
     }
     std::string fname = "out_dynprof." + std::to_string(getpid());
-    std::string header = "DYNPROF:" + std::to_string(OUTPUT_VERSION) + "000\0";
+    std::string header = "DYNPROF:" + std::to_string(OUTPUT_VERSION) + "000";
     int fd = open(fname.c_str(), O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
     if (fd < 0) {
         std::cerr << "Failed to open output file." << std::endl;
@@ -76,6 +76,10 @@ void __dynprof_register_handler() {
     }
     if (write(fd, header.c_str(), header.length() + 1) < 0) {
         std::cerr << "Failed to write header to output file." << std::endl;
+        exit(1);
+    }
+    if (write(fd, "\0", 1) < 0) {
+        std::cerr << "Failed to write header seperator to output file." << std::endl;
         exit(1);
     }
     __dynprof_output_fd = fd;

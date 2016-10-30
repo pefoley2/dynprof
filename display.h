@@ -45,9 +45,9 @@ struct FuncOutput {
     bool operator<(const FuncOutput& other) { return percent > other.percent; }
 };
 
-typedef std::pair<FuncCall, FuncCall> CallPair;
-typedef std::unordered_map<int, CallPair> CallMap;
-typedef std::unordered_map<std::string, CallMap> FuncMap;
+using CallPair = std::pair<FuncCall, FuncCall>;
+using CallMap = std::unordered_map<int, CallPair>;
+using FuncMap = std::unordered_map<std::string, CallMap>;
 
 class Output {
    public:

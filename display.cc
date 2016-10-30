@@ -83,6 +83,7 @@ int Output::process_file(const std::string& fname) {
     char* name = nullptr;
     size_t name_len = 0;
     bool type = false;
+    struct timespec t = {};
     std::unique_ptr<FuncMap> funcs(new FuncMap);
     FILE* f = fopen(fname.c_str(), "r");
     if (!f) {
@@ -100,7 +101,6 @@ int Output::process_file(const std::string& fname) {
         ret = -1;
         goto out;
     }
-    struct timespec t{};
     while (true) {
         if (getdelim(&name, &name_len, '\0', f) < 0) {
             if (feof(f)) {

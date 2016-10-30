@@ -48,7 +48,7 @@ class FuncInfo {
     BPatch_variableExpr* const after;
 };
 
-typedef std::unordered_map<BPatch_function*, FuncInfo*> FuncMap;
+using FuncMap = std::unordered_map<BPatch_function*, FuncInfo*>;
 
 class DynProf {
    public:
