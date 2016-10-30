@@ -258,14 +258,13 @@ void DynProf::registerCleanupSnippet() {
 }
 
 void DynProf::create_structs() {
-    std::vector<char*> time_field_names{strdup("tv_sec"), strdup("tv_nsec")};
+    const char* sec_name = "tv_sec";
+    const char* nsec_name = "tv_nsec";
+    std::vector<char*> time_field_names{const_cast<char*>(sec_name), const_cast<char*>(nsec_name)};
     std::vector<BPatch_type*> time_field_types{
         app->getImage()->findType("long"),  // time_t is ultimately a typedef to long
         app->getImage()->findType("long")};
     timespec_struct = bpatch.createStruct("timespec", time_field_names, time_field_types);
-    for (auto name : time_field_names) {
-        free(name);
-    }
     if (!timespec_struct) {
         std::cerr << "Failed to create struct timespec." << std::endl;
         shutdown();
