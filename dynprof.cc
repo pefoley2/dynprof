@@ -22,14 +22,14 @@
 using Dyninst::Architecture;
 using Dyninst::Stackwalker::Walker;
 
-std::string resolve_path(std::string file) {
+std::string resolve_path(const char* file) {
     char resolved_path[PATH_MAX];
-    if (realpath(file.c_str(), resolved_path)) {
+    if (realpath(file, resolved_path)) {
         if (access(resolved_path, F_OK) == 0) {
             return std::string(resolved_path);
         }
     }
-    return file;
+    return std::string(file);
 }
 
 void DynProf::recordFunc(BPatch_function* func) {

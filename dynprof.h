@@ -33,7 +33,7 @@
 #define DEFAULT_ENTRY_POINT "main"
 #define HELPER_LIB "libdynprof.so"
 
-std::string resolve_path(std::string file);
+std::string resolve_path(const char* file);
 
 class FuncInfo {
    public:

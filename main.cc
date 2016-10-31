@@ -21,7 +21,7 @@
 
 #include "dynprof.h"  // for DynProf
 
-static std::unique_ptr<std::string> get_path(const std::string& exe) {
+static std::unique_ptr<std::string> get_path(const char* exe) {
     std::unique_ptr<std::string> path(new std::string);
     path->assign(getenv("PATH"));
     std::unique_ptr<std::string> fullpath(new std::string);
@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
         binary_edit = true;
         args.erase(args.begin());
     }
-    std::unique_ptr<std::string> path = get_path(args[1]);
+    std::unique_ptr<std::string> path = get_path(argv[0]);
     if (!path) {
         std::cerr << args[1] << " not found in path" << std::endl;
         return 1;
