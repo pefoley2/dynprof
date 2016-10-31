@@ -59,7 +59,7 @@ analyze:
 tidy:
 	test -d work || (mkdir work && cd work && cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ..)
 	make -C work
-	clang-tidy -analyze-temporary-dtors -header-filter='.*' -checks='*,-llvm-header-guard,-readability-implicit-bool-cast,-cppcoreguidelines-pro-bounds-array-to-pointer-decay' -p work *.cc
+	clang-tidy -analyze-temporary-dtors -header-filter='.*' -checks='*,-llvm-header-guard,-llvm-include-order,-readability-implicit-bool-cast,-cppcoreguidelines-pro-bounds-array-to-pointer-decay,-cppcoreguidelines-pro-type-vararg,-cppcoreguidelines-pro-type-const-cast,-cppcoreguidelines-pro-bounds-pointer-arithmetic' -p work *.cc
 
 test: all
 	./dynprof example/test

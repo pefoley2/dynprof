@@ -97,7 +97,7 @@ class DynProf {
     BPatch bpatch;
     FuncMap func_map;
     Dyninst::Architecture arch;
-    int padding __attribute__((unused));  // FIXME: refactor to avoid?
+    int padding __attribute__((unused)) = 0;  // FIXME: refactor to avoid?
     void save_child(BPatch_function* parent, BPatch_point* child);
     void hook_functions();
     void create_structs();
